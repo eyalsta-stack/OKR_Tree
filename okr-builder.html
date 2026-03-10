@@ -821,11 +821,11 @@
 <div class="auth-screen" id="authScreen">
     <div class="auth-card" id="authCard">
         <h2>PayOKR</h2>
-        <p>Sign in to access the OKR Tree Builder</p>
+        <p id="authSubtitle">Sign in to access the OKR Tree Builder</p>
         <div class="auth-email-form show" id="emailForm">
             <input type="email" id="authEmail" placeholder="Email address" onkeydown="if(event.key==='Enter')document.getElementById('authPassword').focus()">
             <div class="auth-pw-wrap">
-                <input type="password" id="authPassword" placeholder="Password" onkeydown="if(event.key==='Enter')signInWithEmail()">
+                <input type="password" id="authPassword" placeholder="Password" onkeydown="if(event.key==='Enter')authSubmit()">
                 <button type="button" class="auth-pw-eye" onclick="togglePwVisibility()" title="Show/hide password">
                     <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
@@ -839,7 +839,10 @@
                     </svg>
                 </button>
             </div>
-            <button class="auth-btn auth-btn-email" onclick="signInWithEmail()">Sign In</button>
+            <button class="auth-btn auth-btn-email" id="authMainBtn" onclick="authSubmit()">Sign In</button>
+            <div style="text-align:center;margin-top:0.4rem">
+                <a href="#" id="authToggleLink" onclick="toggleAuthMode();return false" style="color:var(--accent);font-size:0.8rem;text-decoration:none">Don't have an account? Register</a>
+            </div>
         </div>
         <div class="auth-error" id="authError"></div>
     </div>
@@ -1333,12 +1336,12 @@
 
 <script>
 // ─── CLIENT-SIDE AUTH & RBAC ───
-const USERS = {
-    'eyalsta@payoneer.com': { name: 'Eyal Stavans', passwordHash: 'cc2215ba2834840a3d3a2a18658c02d02a388b2baff6b2009088e38d94675d63', role: 'admin' }
-};
+const ADMIN_EMAIL = 'eyalsta@payoneer.com';
+const ADMIN_HASH  = 'cc2215ba2834840a3d3a2a18658c02d02a388b2baff6b2009088e38d94675d63';
 
 let currentUserRole = null;
 let currentUserEmail = null;
+let authMode = 'signin'; // 'signin' or 'register'
 
 const ROLE_PERMISSIONS = {
     admin:     { edit: true, save: true, create: true, delete: true, manageUsers: true },
@@ -1355,6 +1358,19 @@ async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function getUsers() {
+    const raw = localStorage.getItem('payokr_users');
+    if (raw) return JSON.parse(raw);
+    const seed = {};
+    seed[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: ADMIN_HASH, role: 'admin' };
+    localStorage.setItem('payokr_users', JSON.stringify(seed));
+    return seed;
+}
+
+function saveUsers(users) {
+    localStorage.setItem('payokr_users', JSON.stringify(users));
 }
 
 function applyRoleUI() {
@@ -1386,7 +1402,8 @@ function applyRoleUI() {
 }
 
 function loginUser(email) {
-    const user = USERS[email.toLowerCase()];
+    const users = getUsers();
+    const user = users[email.toLowerCase()];
     if (!user) return;
     currentUserEmail = email.toLowerCase();
     currentUserRole = user.role;
@@ -1397,12 +1414,27 @@ function loginUser(email) {
 
 function restoreSession() {
     const saved = sessionStorage.getItem('payokr_user');
-    if (saved && USERS[saved]) {
+    const users = getUsers();
+    if (saved && users[saved]) {
         loginUser(saved);
     } else {
         document.getElementById('authScreen').classList.remove('hidden');
     }
 }
+
+window.toggleAuthMode = function() {
+    authMode = authMode === 'signin' ? 'register' : 'signin';
+    document.getElementById('authError').textContent = '';
+    if (authMode === 'register') {
+        document.getElementById('authSubtitle').textContent = 'Create a new account';
+        document.getElementById('authMainBtn').textContent = 'Register';
+        document.getElementById('authToggleLink').textContent = 'Already have an account? Sign In';
+    } else {
+        document.getElementById('authSubtitle').textContent = 'Sign in to access the OKR Tree Builder';
+        document.getElementById('authMainBtn').textContent = 'Sign In';
+        document.getElementById('authToggleLink').textContent = "Don't have an account? Register";
+    }
+};
 
 window.togglePwVisibility = function() {
     const inp = document.getElementById('authPassword');
@@ -1412,23 +1444,37 @@ window.togglePwVisibility = function() {
     document.getElementById('eyeOffIcon').style.display = show ? '' : 'none';
 };
 
-window.signInWithEmail = async function() {
+window.authSubmit = async function() {
     const email = document.getElementById('authEmail').value.trim().toLowerCase();
     const pw = document.getElementById('authPassword').value;
     if (!email || !pw) { document.getElementById('authError').textContent = 'Enter email and password'; return; }
+    if (pw.length < 6) { document.getElementById('authError').textContent = 'Password must be at least 6 characters'; return; }
     document.getElementById('authError').textContent = '';
 
-    const user = USERS[email];
-    if (!user) {
-        document.getElementById('authError').textContent = 'Account not found. Contact an admin for access.';
-        return;
-    }
+    const users = getUsers();
     const hash = await sha256(pw);
-    if (hash !== user.passwordHash) {
-        document.getElementById('authError').textContent = 'Incorrect password.';
-        return;
+
+    if (authMode === 'register') {
+        if (users[email]) {
+            document.getElementById('authError').textContent = 'An account with this email already exists. Try signing in.';
+            return;
+        }
+        const isFirst = Object.keys(users).length === 0;
+        users[email] = { name: email.split('@')[0], passwordHash: hash, role: isFirst ? 'admin' : 'spectator' };
+        saveUsers(users);
+        loginUser(email);
+    } else {
+        const user = users[email];
+        if (!user) {
+            document.getElementById('authError').textContent = 'Account not found. Register first or check your email.';
+            return;
+        }
+        if (hash !== user.passwordHash) {
+            document.getElementById('authError').textContent = 'Incorrect password.';
+            return;
+        }
+        loginUser(email);
     }
-    loginUser(email);
 };
 
 window.authSignOut = function() {
@@ -1448,24 +1494,45 @@ window.openUserMgmt = function() {
     const list = document.getElementById('userList');
     document.getElementById('userMgmtOverlay').classList.add('open');
 
-    const emails = Object.keys(USERS);
+    const users = getUsers();
+    const emails = Object.keys(users);
     if (!emails.length) { list.innerHTML = '<p style="color:var(--text-muted)">No users</p>'; return; }
 
     let html = '';
     emails.forEach(email => {
-        const u = USERS[email];
+        const u = users[email];
         const isSelf = email === currentUserEmail;
         html += `<div class="user-row">
             <div class="user-email">${u.name || email}${isSelf ? ' (you)' : ''}</div>
-            <div class="user-role-select" style="background:var(--surface2);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.8rem;color:var(--text-muted)">${u.role}</div>
+            <select class="user-role-select" onchange="changeUserRole('${email}', this.value)" ${isSelf ? 'disabled' : ''}>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <option value="manager" ${u.role === 'manager' ? 'selected' : ''}>Manager</option>
+                <option value="spectator" ${u.role === 'spectator' ? 'selected' : ''}>Spectator</option>
+            </select>
+            ${!isSelf ? `<button class="user-remove" onclick="removeUser('${email}')" title="Remove user">&times;</button>` : ''}
         </div>`;
     });
-    html += '<p style="color:var(--text-muted);font-size:0.75rem;margin-top:1rem">To add or change users, update the code and redeploy.</p>';
     list.innerHTML = html;
 };
 
 window.closeUserMgmt = function() {
     document.getElementById('userMgmtOverlay').classList.remove('open');
+};
+
+window.changeUserRole = function(email, newRole) {
+    if (!hasPermission('manageUsers')) return;
+    const users = getUsers();
+    if (users[email]) { users[email].role = newRole; saveUsers(users); }
+    openUserMgmt();
+};
+
+window.removeUser = function(email) {
+    if (!hasPermission('manageUsers')) return;
+    if (!confirm('Remove this user?')) return;
+    const users = getUsers();
+    delete users[email];
+    saveUsers(users);
+    openUserMgmt();
 };
 
 restoreSession();
