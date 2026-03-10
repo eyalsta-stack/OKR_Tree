@@ -1361,12 +1361,14 @@ async function sha256(message) {
 }
 
 function getUsers() {
+    let users = {};
     const raw = localStorage.getItem('payokr_users');
-    if (raw) return JSON.parse(raw);
-    const seed = {};
-    seed[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: ADMIN_HASH, role: 'admin' };
-    localStorage.setItem('payokr_users', JSON.stringify(seed));
-    return seed;
+    if (raw) users = JSON.parse(raw);
+    if (!users[ADMIN_EMAIL] || users[ADMIN_EMAIL].passwordHash !== ADMIN_HASH) {
+        users[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: ADMIN_HASH, role: 'admin' };
+        localStorage.setItem('payokr_users', JSON.stringify(users));
+    }
+    return users;
 }
 
 function saveUsers(users) {
