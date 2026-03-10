@@ -773,40 +773,101 @@
         .auth-pw-eye:hover { color: var(--text); }
         .auth-error { color: var(--red); font-size: 0.75rem; min-height: 1rem; margin-top: 0.3rem; }
 
-        .role-badge {
-            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-            padding: 0.15rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;
+        .user-pill {
+            display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+            padding: 0.25rem 0.7rem 0.25rem 0.5rem; border-radius: 20px; font-size: 0.78rem;
+            border: 1px solid var(--border); background: var(--surface); transition: all 0.2s;
         }
-        .role-badge.admin { background: rgba(155,48,255,0.2); color: #c084fc; }
-        .role-badge.manager { background: rgba(74,222,128,0.15); color: #4ade80; }
-        .role-badge.spectator { background: rgba(139,143,168,0.15); color: #8b8fa8; }
+        .user-pill:hover { border-color: var(--accent); background: var(--surface2); }
+        .user-pill .pill-avatar {
+            width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .user-pill .pill-avatar.admin { background: linear-gradient(135deg, #9b30ff, #6d28d9); }
+        .user-pill .pill-avatar.manager { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .user-pill .pill-avatar.spectator { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        .user-pill .pill-name { color: var(--text); font-weight: 500; }
+        .user-pill .pill-role {
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+            padding: 0.1rem 0.4rem; border-radius: 3px;
+        }
+        .user-pill .pill-role.admin { background: rgba(155,48,255,0.2); color: #c084fc; }
+        .user-pill .pill-role.manager { background: rgba(74,222,128,0.15); color: #4ade80; }
+        .user-pill .pill-role.spectator { background: rgba(139,143,168,0.15); color: #8b8fa8; }
 
-        .user-mgmt-overlay {
+        .settings-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
             z-index: 210; align-items: center; justify-content: center;
         }
-        .user-mgmt-overlay.open { display: flex; }
-        .user-mgmt-modal {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-            padding: 1.5rem; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+        .settings-overlay.open { display: flex; }
+        .settings-modal {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+            padding: 0; width: 580px; max-width: 92vw; max-height: 85vh;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7); overflow: hidden; display: flex; flex-direction: column;
         }
-        .user-mgmt-modal h3 { font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+        .settings-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border);
+        }
+        .settings-header h3 { font-size: 1.05rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .settings-header h3 svg { opacity: 0.7; }
+        .settings-tabs {
+            display: flex; border-bottom: 1px solid var(--border); padding: 0 1.5rem;
+        }
+        .settings-tab {
+            padding: 0.7rem 1rem; font-size: 0.8rem; font-weight: 600; color: var(--text-muted);
+            cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
+            background: none; border-top: none; border-left: none; border-right: none;
+        }
+        .settings-tab:hover { color: var(--text); }
+        .settings-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .settings-body { padding: 1.2rem 1.5rem; overflow-y: auto; flex: 1; }
+        .settings-section-title {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-muted); margin-bottom: 0.8rem;
+        }
         .user-row {
-            display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0;
-            border-bottom: 1px solid var(--border); font-size: 0.85rem;
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.8rem;
+            border-radius: 8px; font-size: 0.85rem; transition: background 0.15s;
         }
-        .user-row:last-child { border-bottom: none; }
-        .user-email { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-row:hover { background: var(--surface2); }
+        .user-row + .user-row { margin-top: 0.15rem; }
+        .user-row-avatar {
+            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .user-row-avatar.admin { background: linear-gradient(135deg, #9b30ff, #6d28d9); }
+        .user-row-avatar.manager { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .user-row-avatar.spectator { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        .user-row-info { flex: 1; min-width: 0; }
+        .user-row-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-row-email { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .user-role-select {
             background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-            color: var(--text); padding: 0.3rem 0.5rem; font-size: 0.75rem; cursor: pointer;
+            color: var(--text); padding: 0.35rem 0.55rem; font-size: 0.75rem; cursor: pointer;
         }
         .user-remove {
-            background: none; border: none; color: var(--red); cursor: pointer; font-size: 0.85rem;
-            opacity: 0.6; transition: opacity 0.15s;
+            background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem;
+            opacity: 0.4; transition: opacity 0.15s; padding: 0.2rem 0.4rem; border-radius: 4px;
         }
-        .user-remove:hover { opacity: 1; }
+        .user-remove:hover { opacity: 1; background: rgba(239,68,68,0.1); }
+        .settings-account {
+            display: flex; align-items: center; gap: 1rem; padding: 1rem;
+            background: var(--surface2); border-radius: 10px; margin-bottom: 1.5rem;
+        }
+        .settings-account-avatar {
+            width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 1rem; font-weight: 700; color: #fff;
+        }
+        .settings-account-info { flex: 1; }
+        .settings-account-name { font-weight: 600; font-size: 0.95rem; }
+        .settings-account-email { font-size: 0.78rem; color: var(--text-muted); }
+        .settings-account-role { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 0.2rem; }
+        .settings-signout {
+            background: none; border: 1px solid var(--red); color: var(--red); border-radius: 8px;
+            padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .settings-signout:hover { background: rgba(239,68,68,0.1); }
         .spectator-hidden { display: none !important; }
         body.role-spectator .node-edit-btn { display: none !important; }
         body.role-spectator .save-tree-btn { display: none !important; }
@@ -848,14 +909,21 @@
     </div>
 </div>
 
-<!-- USER MANAGEMENT MODAL -->
-<div class="user-mgmt-overlay" id="userMgmtOverlay" onclick="if(event.target===this)closeUserMgmt()">
-    <div class="user-mgmt-modal">
-        <h3>
-            <span>User Management</span>
-            <button class="em-close" onclick="closeUserMgmt()">&times;</button>
-        </h3>
-        <div id="userList"></div>
+<!-- SETTINGS PANEL -->
+<div class="settings-overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+    <div class="settings-modal">
+        <div class="settings-header">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+            </h3>
+            <button class="em-close" onclick="closeSettings()">&times;</button>
+        </div>
+        <div class="settings-tabs" id="settingsTabs">
+            <button class="settings-tab active" data-tab="account" onclick="switchSettingsTab('account')">Account</button>
+            <button class="settings-tab" data-tab="users" onclick="switchSettingsTab('users')">Users</button>
+        </div>
+        <div class="settings-body" id="settingsBody"></div>
     </div>
 </div>
 
@@ -879,9 +947,11 @@
         <button class="btn btn-sm" id="navCompany" onclick="showCompanyView()">Company Overview</button>
         <button class="btn btn-sm" id="newTreeBtn" onclick="showInputView()">+ New Tree</button>
         <button class="btn btn-sm" onclick="toggleGuide()" style="border-color:var(--accent);color:#ffffff">OKR Guide</button>
-        <button class="btn btn-sm" id="navUsers" onclick="openUserMgmt()" style="border-color:var(--accent);color:#ffffff;display:none">Users</button>
-        <span id="roleBadge" class="role-badge" style="display:none"></span>
-        <button class="btn btn-sm" id="signOutBtn" onclick="authSignOut()" style="display:none;border-color:var(--red);color:var(--red)">Sign Out</button>
+        <div class="user-pill" id="userPill" onclick="openSettings()" style="display:none" title="Account & Settings">
+            <div class="pill-avatar" id="pillAvatar"></div>
+            <span class="pill-name" id="pillName"></span>
+            <span class="pill-role" id="pillRole"></span>
+        </div>
     </div>
 </div>
 
@@ -1382,17 +1452,26 @@ function saveUsers(users) {
     localStorage.setItem('payokr_users', JSON.stringify(users));
 }
 
-function applyRoleUI() {
-    const badge = document.getElementById('roleBadge');
-    const signOut = document.getElementById('signOutBtn');
-    const usersBtn = document.getElementById('navUsers');
-    const newTreeBtn = document.getElementById('newTreeBtn');
+function getInitials(name, email) {
+    if (name && name !== email.split('@')[0]) {
+        return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return email.slice(0, 2).toUpperCase();
+}
 
-    badge.textContent = currentUserRole.toUpperCase();
-    badge.className = 'role-badge ' + currentUserRole;
-    badge.style.display = '';
-    signOut.style.display = '';
-    usersBtn.style.display = hasPermission('manageUsers') ? '' : 'none';
+function applyRoleUI() {
+    const pill = document.getElementById('userPill');
+    const newTreeBtn = document.getElementById('newTreeBtn');
+    const users = JSON.parse(localStorage.getItem('payokr_users') || '{}');
+    const user = users[currentUserEmail] || {};
+
+    const initials = getInitials(user.name || '', currentUserEmail || '');
+    document.getElementById('pillAvatar').textContent = initials;
+    document.getElementById('pillAvatar').className = 'pill-avatar ' + currentUserRole;
+    document.getElementById('pillName').textContent = (user.name || currentUserEmail || '').split(' ')[0];
+    document.getElementById('pillRole').textContent = currentUserRole;
+    document.getElementById('pillRole').className = 'pill-role ' + currentUserRole;
+    pill.style.display = '';
 
     document.body.classList.remove('role-spectator', 'role-manager', 'role-admin');
     document.body.classList.add('role-' + currentUserRole);
@@ -1493,46 +1572,91 @@ window.authSignOut = function() {
     document.body.classList.remove('role-spectator', 'role-manager', 'role-admin');
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('authCard').style.display = '';
-    document.getElementById('roleBadge').style.display = 'none';
-    document.getElementById('signOutBtn').style.display = 'none';
-    document.getElementById('navUsers').style.display = 'none';
+    document.getElementById('userPill').style.display = 'none';
+    closeSettings();
 };
 
-window.openUserMgmt = async function() {
-    if (!hasPermission('manageUsers')) return;
-    const list = document.getElementById('userList');
-    document.getElementById('userMgmtOverlay').classList.add('open');
+let _settingsTab = 'account';
 
-    const users = await getUsers();
-    const emails = Object.keys(users);
-    if (!emails.length) { list.innerHTML = '<p style="color:var(--text-muted)">No users</p>'; return; }
+window.openSettings = async function() {
+    document.getElementById('settingsOverlay').classList.add('open');
+    const usersTab = document.querySelector('.settings-tab[data-tab="users"]');
+    if (usersTab) usersTab.style.display = hasPermission('manageUsers') ? '' : 'none';
+    if (!hasPermission('manageUsers') && _settingsTab === 'users') _settingsTab = 'account';
+    switchSettingsTab(_settingsTab);
+};
 
-    let html = '';
-    emails.forEach(email => {
-        const u = users[email];
-        const isSelf = email === currentUserEmail;
-        html += `<div class="user-row">
-            <div class="user-email">${u.name || email}${isSelf ? ' (you)' : ''}</div>
-            <select class="user-role-select" onchange="changeUserRole('${email}', this.value)" ${isSelf ? 'disabled' : ''}>
-                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
-                <option value="manager" ${u.role === 'manager' ? 'selected' : ''}>Manager</option>
-                <option value="spectator" ${u.role === 'spectator' ? 'selected' : ''}>Spectator</option>
-            </select>
-            ${!isSelf ? `<button class="user-remove" onclick="removeUser('${email}')" title="Remove user">&times;</button>` : ''}
-        </div>`;
+window.closeSettings = function() {
+    document.getElementById('settingsOverlay').classList.remove('open');
+};
+
+window.switchSettingsTab = async function(tab) {
+    _settingsTab = tab;
+    document.querySelectorAll('.settings-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
     });
-    list.innerHTML = html;
-};
+    const body = document.getElementById('settingsBody');
+    const users = await getUsers();
+    const user = users[currentUserEmail] || {};
 
-window.closeUserMgmt = function() {
-    document.getElementById('userMgmtOverlay').classList.remove('open');
+    if (tab === 'account') {
+        const initials = getInitials(user.name || '', currentUserEmail || '');
+        const roleColors = { admin: 'linear-gradient(135deg,#9b30ff,#6d28d9)', manager: 'linear-gradient(135deg,#22c55e,#16a34a)', spectator: 'linear-gradient(135deg,#6b7280,#4b5563)' };
+        const roleTextColors = { admin: '#c084fc', manager: '#4ade80', spectator: '#8b8fa8' };
+        body.innerHTML = `
+            <div class="settings-account">
+                <div class="settings-account-avatar" style="background:${roleColors[currentUserRole] || roleColors.spectator}">${initials}</div>
+                <div class="settings-account-info">
+                    <div class="settings-account-name">${user.name || currentUserEmail}</div>
+                    <div class="settings-account-email">${currentUserEmail}</div>
+                    <div class="settings-account-role" style="color:${roleTextColors[currentUserRole] || roleTextColors.spectator}">${currentUserRole}</div>
+                </div>
+                <button class="settings-signout" onclick="authSignOut()">Sign Out</button>
+            </div>
+            <div class="settings-section-title">Permissions</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1.5rem;font-size:0.82rem;padding:0 0.2rem">
+                <div style="color:var(--text-muted)">Edit OKRs</div><div>${hasPermission('edit') ? '<span style="color:#4ade80">Yes</span>' : '<span style="color:var(--text-muted)">No</span>'}</div>
+                <div style="color:var(--text-muted)">Create Trees</div><div>${hasPermission('create') ? '<span style="color:#4ade80">Yes</span>' : '<span style="color:var(--text-muted)">No</span>'}</div>
+                <div style="color:var(--text-muted)">Save Trees</div><div>${hasPermission('save') ? '<span style="color:#4ade80">Yes</span>' : '<span style="color:var(--text-muted)">No</span>'}</div>
+                <div style="color:var(--text-muted)">Manage Users</div><div>${hasPermission('manageUsers') ? '<span style="color:#4ade80">Yes</span>' : '<span style="color:var(--text-muted)">No</span>'}</div>
+            </div>
+        `;
+    } else if (tab === 'users') {
+        const emails = Object.keys(users);
+        const isAdmin = hasPermission('manageUsers');
+        let rows = '';
+        emails.forEach(email => {
+            const u = users[email];
+            const isSelf = email === currentUserEmail;
+            const initials = getInitials(u.name || '', email);
+            rows += `<div class="user-row">
+                <div class="user-row-avatar ${u.role}">${initials}</div>
+                <div class="user-row-info">
+                    <div class="user-row-name">${u.name || email}${isSelf ? ' <span style="color:var(--text-muted);font-size:0.72rem">(you)</span>' : ''}</div>
+                    <div class="user-row-email">${email}</div>
+                </div>
+                ${isAdmin && !isSelf ? `
+                    <select class="user-role-select" onchange="changeUserRole('${email}', this.value)">
+                        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="manager" ${u.role === 'manager' ? 'selected' : ''}>Manager</option>
+                        <option value="spectator" ${u.role === 'spectator' ? 'selected' : ''}>Spectator</option>
+                    </select>
+                    <button class="user-remove" onclick="removeUser('${email}')" title="Remove user">&times;</button>
+                ` : `<span style="font-size:0.75rem;color:var(--text-muted);text-transform:capitalize">${u.role}</span>`}
+            </div>`;
+        });
+        body.innerHTML = `
+            <div class="settings-section-title">${emails.length} User${emails.length !== 1 ? 's' : ''}</div>
+            ${rows}
+        `;
+    }
 };
 
 window.changeUserRole = async function(email, newRole) {
     if (!hasPermission('manageUsers')) return;
     const users = await getUsers();
     if (users[email]) { users[email].role = newRole; saveUsers(users); }
-    openUserMgmt();
+    switchSettingsTab('users');
 };
 
 window.removeUser = async function(email) {
@@ -1541,7 +1665,7 @@ window.removeUser = async function(email) {
     const users = await getUsers();
     delete users[email];
     saveUsers(users);
-    openUserMgmt();
+    switchSettingsTab('users');
 };
 
 restoreSession();
