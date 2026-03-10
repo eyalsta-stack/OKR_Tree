@@ -6,6 +6,9 @@
     <title>PayOKR</title>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --bg: #0c0e14; --surface: #131520; --surface2: #1c1e2e;
@@ -734,9 +737,122 @@
             font-weight: 600; transition: all 0.15s;
         }
         .chat-btn-inline:hover { background: rgba(155,48,255,0.2); }
+
+        /* Auth & RBAC */
+        .auth-screen {
+            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+            display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem;
+        }
+        .auth-screen.hidden { display: none; }
+        .auth-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+            padding: 2.5rem; width: 380px; max-width: 90vw; text-align: center;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+        }
+        .auth-card h2 { font-size: 1.3rem; margin-bottom: 0.3rem; }
+        .auth-card p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+        .auth-btn {
+            width: 100%; padding: 0.7rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--border); margin-bottom: 0.6rem;
+            display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+            transition: all 0.15s; font-family: inherit;
+        }
+        .auth-btn-google { background: #fff; color: #333; }
+        .auth-btn-google:hover { background: #f0f0f0; }
+        .auth-btn-email { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .auth-btn-email:hover { background: var(--accent-hover); }
+        .auth-divider { display: flex; align-items: center; gap: 0.8rem; margin: 1rem 0; color: var(--text-muted); font-size: 0.75rem; }
+        .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .auth-email-form { display: none; flex-direction: column; gap: 0.6rem; }
+        .auth-email-form.show { display: flex; }
+        .auth-email-form input {
+            padding: 0.6rem 0.75rem; background: var(--bg); border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.85rem;
+        }
+        .auth-email-form input:focus { outline: none; border-color: var(--accent); }
+        .auth-error { color: var(--red); font-size: 0.75rem; min-height: 1rem; margin-top: 0.3rem; }
+        .auth-pending { text-align: center; }
+        .auth-pending h3 { margin-bottom: 0.5rem; }
+
+        .role-badge {
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 0.15rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;
+        }
+        .role-badge.admin { background: rgba(155,48,255,0.2); color: #c084fc; }
+        .role-badge.manager { background: rgba(74,222,128,0.15); color: #4ade80; }
+        .role-badge.spectator { background: rgba(139,143,168,0.15); color: #8b8fa8; }
+
+        .user-mgmt-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            z-index: 210; align-items: center; justify-content: center;
+        }
+        .user-mgmt-overlay.open { display: flex; }
+        .user-mgmt-modal {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+        }
+        .user-mgmt-modal h3 { font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+        .user-row {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border); font-size: 0.85rem;
+        }
+        .user-row:last-child { border-bottom: none; }
+        .user-email { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-role-select {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text); padding: 0.3rem 0.5rem; font-size: 0.75rem; cursor: pointer;
+        }
+        .user-remove {
+            background: none; border: none; color: var(--red); cursor: pointer; font-size: 0.85rem;
+            opacity: 0.6; transition: opacity 0.15s;
+        }
+        .user-remove:hover { opacity: 1; }
+        .spectator-hidden { display: none !important; }
+        body.role-spectator .node-edit-btn { display: none !important; }
+        body.role-spectator .save-tree-btn { display: none !important; }
+        body.role-spectator .em-add { display: none !important; }
+        body.role-spectator .em-delete { display: none !important; }
+        body.role-spectator .em-actions .btn-primary { display: none !important; }
     </style>
 </head>
 <body>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen">
+    <div class="auth-card" id="authCard">
+        <h2>PayOKR</h2>
+        <p>Sign in to access the OKR Tree Builder</p>
+        <button class="auth-btn auth-btn-google" onclick="signInWithGoogle()">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+            Sign in with Google
+        </button>
+        <div class="auth-divider">or</div>
+        <button class="auth-btn auth-btn-email" onclick="toggleEmailForm()">Sign in with Email</button>
+        <div class="auth-email-form" id="emailForm">
+            <input type="email" id="authEmail" placeholder="Email address">
+            <input type="password" id="authPassword" placeholder="Password">
+            <button class="auth-btn auth-btn-email" onclick="signInWithEmail()">Sign In / Register</button>
+        </div>
+        <div class="auth-error" id="authError"></div>
+    </div>
+    <div class="auth-card auth-pending" id="authPending" style="display:none">
+        <h3>Awaiting Approval</h3>
+        <p>Your account has been registered. An admin needs to approve your access.</p>
+        <button class="auth-btn" onclick="authSignOut()" style="margin-top:1rem;background:var(--surface2);color:var(--text)">Sign Out</button>
+    </div>
+</div>
+
+<!-- USER MANAGEMENT MODAL -->
+<div class="user-mgmt-overlay" id="userMgmtOverlay" onclick="if(event.target===this)closeUserMgmt()">
+    <div class="user-mgmt-modal">
+        <h3>
+            <span>User Management</span>
+            <button class="em-close" onclick="closeUserMgmt()">&times;</button>
+        </h3>
+        <div id="userList"></div>
+    </div>
+</div>
 
 <div class="app-header">
     <div>
@@ -758,6 +874,9 @@
         <button class="btn btn-sm" id="navCompany" onclick="showCompanyView()">Company Overview</button>
         <button class="btn btn-sm" id="newTreeBtn" onclick="showInputView()">+ New Tree</button>
         <button class="btn btn-sm" onclick="toggleGuide()" style="border-color:var(--accent);color:#ffffff">OKR Guide</button>
+        <button class="btn btn-sm" id="navUsers" onclick="openUserMgmt()" style="border-color:var(--accent);color:#ffffff;display:none">Users</button>
+        <span id="roleBadge" class="role-badge" style="display:none"></span>
+        <button class="btn btn-sm" id="signOutBtn" onclick="authSignOut()" style="display:none;border-color:var(--red);color:var(--red)">Sign Out</button>
     </div>
 </div>
 
@@ -891,7 +1010,7 @@
             <button class="btn btn-sm" onclick="collapseAll()">Collapse All</button>
             <button class="btn btn-sm" onclick="resetView()">Reset View</button>
             <button class="btn btn-sm" id="toggleLayout" onclick="toggleOrientation()">Vertical</button>
-            <button class="btn btn-sm" onclick="saveCurrentTree()">Save Tree</button>
+            <button class="btn btn-sm save-tree-btn" onclick="saveCurrentTree()">Save Tree</button>
             <div class="export-dropdown" id="exportDropdown">
                 <button class="btn btn-sm" onclick="toggleExportMenu()">Export &#9660;</button>
                 <div class="export-menu" id="exportMenu">
@@ -1211,6 +1330,187 @@
 </div>
 
 <script>
+// ─── FIREBASE AUTH & RBAC ───
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let currentUserRole = null;
+let currentUserUid = null;
+
+const ROLE_PERMISSIONS = {
+    admin:     { edit: true, save: true, create: true, delete: true, manageUsers: true },
+    manager:   { edit: true, save: true, create: true, delete: true, manageUsers: false },
+    spectator: { edit: false, save: false, create: false, delete: false, manageUsers: false }
+};
+
+function hasPermission(action) {
+    if (!currentUserRole || !ROLE_PERMISSIONS[currentUserRole]) return false;
+    return ROLE_PERMISSIONS[currentUserRole][action] === true;
+}
+
+function applyRoleUI() {
+    const badge = document.getElementById('roleBadge');
+    const signOut = document.getElementById('signOutBtn');
+    const usersBtn = document.getElementById('navUsers');
+    const newTreeBtn = document.getElementById('newTreeBtn');
+
+    badge.textContent = currentUserRole.toUpperCase();
+    badge.className = 'role-badge ' + currentUserRole;
+    badge.style.display = '';
+    signOut.style.display = '';
+    usersBtn.style.display = hasPermission('manageUsers') ? '' : 'none';
+
+    document.body.classList.remove('role-spectator', 'role-manager', 'role-admin');
+    document.body.classList.add('role-' + currentUserRole);
+
+    if (!hasPermission('create')) {
+        newTreeBtn.classList.add('spectator-hidden');
+    } else {
+        newTreeBtn.classList.remove('spectator-hidden');
+    }
+
+    const saveBtn = document.querySelector('.tree-toolbar .btn-primary');
+    if (saveBtn) {
+        if (!hasPermission('save')) saveBtn.classList.add('spectator-hidden');
+        else saveBtn.classList.remove('spectator-hidden');
+    }
+}
+
+async function handleAuthUser(user) {
+    if (!user) {
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('authCard').style.display = '';
+        document.getElementById('authPending').style.display = 'none';
+        return;
+    }
+    currentUserUid = user.uid;
+
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (userDoc.exists) {
+        const data = userDoc.data();
+        if (data.role === 'pending') {
+            document.getElementById('authCard').style.display = 'none';
+            document.getElementById('authPending').style.display = '';
+            return;
+        }
+        currentUserRole = data.role;
+    } else {
+        const usersSnap = await db.collection('users').get();
+        const isFirst = usersSnap.empty;
+        const role = isFirst ? 'admin' : 'pending';
+        await db.collection('users').doc(user.uid).set({
+            email: user.email || user.providerData?.[0]?.email || 'unknown',
+            role: role,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (role === 'pending') {
+            document.getElementById('authCard').style.display = 'none';
+            document.getElementById('authPending').style.display = '';
+            return;
+        }
+        currentUserRole = role;
+    }
+
+    document.getElementById('authScreen').classList.add('hidden');
+    applyRoleUI();
+}
+
+auth.onAuthStateChanged(handleAuthUser);
+
+window.signInWithGoogle = async function() {
+    try {
+        document.getElementById('authError').textContent = '';
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+    } catch (e) {
+        document.getElementById('authError').textContent = e.message;
+    }
+};
+
+window.toggleEmailForm = function() {
+    document.getElementById('emailForm').classList.toggle('show');
+};
+
+window.signInWithEmail = async function() {
+    const email = document.getElementById('authEmail').value.trim();
+    const pw = document.getElementById('authPassword').value;
+    if (!email || !pw) { document.getElementById('authError').textContent = 'Enter email and password'; return; }
+    try {
+        document.getElementById('authError').textContent = '';
+        await auth.signInWithEmailAndPassword(email, pw);
+    } catch (e) {
+        if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+            try {
+                await auth.createUserWithEmailAndPassword(email, pw);
+            } catch (e2) {
+                document.getElementById('authError').textContent = e2.message;
+            }
+        } else {
+            document.getElementById('authError').textContent = e.message;
+        }
+    }
+};
+
+window.authSignOut = async function() {
+    currentUserRole = null;
+    currentUserUid = null;
+    await auth.signOut();
+};
+
+window.openUserMgmt = async function() {
+    if (!hasPermission('manageUsers')) return;
+    const list = document.getElementById('userList');
+    list.innerHTML = '<p style="color:var(--text-muted)">Loading...</p>';
+    document.getElementById('userMgmtOverlay').classList.add('open');
+
+    const snap = await db.collection('users').get();
+    if (snap.empty) { list.innerHTML = '<p style="color:var(--text-muted)">No users</p>'; return; }
+
+    let html = '';
+    snap.forEach(doc => {
+        const u = doc.data();
+        const isSelf = doc.id === currentUserUid;
+        html += `<div class="user-row">
+            <div class="user-email">${u.email || doc.id}${isSelf ? ' (you)' : ''}</div>
+            <select class="user-role-select" onchange="changeUserRole('${doc.id}', this.value)" ${isSelf ? 'disabled' : ''}>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <option value="manager" ${u.role === 'manager' ? 'selected' : ''}>Manager</option>
+                <option value="spectator" ${u.role === 'spectator' ? 'selected' : ''}>Spectator</option>
+                <option value="pending" ${u.role === 'pending' ? 'selected' : ''}>Pending</option>
+            </select>
+            ${!isSelf ? `<button class="user-remove" onclick="removeUser('${doc.id}')" title="Remove user">&times;</button>` : ''}
+        </div>`;
+    });
+    list.innerHTML = html;
+};
+
+window.closeUserMgmt = function() {
+    document.getElementById('userMgmtOverlay').classList.remove('open');
+};
+
+window.changeUserRole = async function(uid, newRole) {
+    if (!hasPermission('manageUsers')) return;
+    await db.collection('users').doc(uid).update({ role: newRole });
+    openUserMgmt();
+};
+
+window.removeUser = async function(uid) {
+    if (!hasPermission('manageUsers')) return;
+    if (!confirm('Remove this user?')) return;
+    await db.collection('users').doc(uid).delete();
+    openUserMgmt();
+};
+
 // State
 let currentData = null;
 let currentDept = '';
@@ -2841,6 +3141,7 @@ function demoRespond(text, lower) {
 }
 
 window.showInputView = function(fromTab) {
+    if (!hasPermission('create')) return;
     hideAllViews();
     document.getElementById('input-view').classList.add('active');
     document.getElementById('newTreeBtn').classList.add('nav-active');
@@ -3355,6 +3656,7 @@ function getAllTrees() {
 
 // Save / Load — upserts by department (no duplicates)
 window.saveCurrentTree = function() {
+    if (!hasPermission('save')) return;
     if (!currentData) return;
     let trees = JSON.parse(localStorage.getItem('okr_trees') || '[]');
     const existingIdx = trees.findIndex(t => t.dept === currentDept);
@@ -3383,6 +3685,7 @@ let editingIsCompany = false;
 function openEditModal(event, d, isCompany) {
     event.preventDefault();
     event.stopPropagation();
+    if (!hasPermission('edit')) return;
     hideTooltip();
     editingNode = d;
     editingIsCompany = !!isCompany;
