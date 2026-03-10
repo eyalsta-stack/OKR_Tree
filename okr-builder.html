@@ -770,6 +770,14 @@
             border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.85rem;
         }
         .auth-email-form input:focus { outline: none; border-color: var(--accent); }
+        .auth-pw-wrap { position: relative; display: flex; align-items: center; }
+        .auth-pw-wrap input { flex: 1; padding-right: 2.4rem; }
+        .auth-pw-eye {
+            position: absolute; right: 0.5rem; background: none; border: none;
+            color: var(--text-muted); cursor: pointer; padding: 0.2rem; display: flex;
+            align-items: center; justify-content: center; transition: color 0.2s;
+        }
+        .auth-pw-eye:hover { color: var(--text); }
         .auth-error { color: var(--red); font-size: 0.75rem; min-height: 1rem; margin-top: 0.3rem; }
         .auth-pending { text-align: center; }
         .auth-pending h3 { margin-bottom: 0.5rem; }
@@ -831,7 +839,21 @@
         <button class="auth-btn auth-btn-email" onclick="toggleEmailForm()">Sign in with Email</button>
         <div class="auth-email-form" id="emailForm">
             <input type="email" id="authEmail" placeholder="Email address">
-            <input type="password" id="authPassword" placeholder="Password">
+            <div class="auth-pw-wrap">
+                <input type="password" id="authPassword" placeholder="Password">
+                <button type="button" class="auth-pw-eye" onclick="togglePwVisibility()" title="Show/hide password">
+                    <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg id="eyeOffIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </button>
+            </div>
             <button class="auth-btn auth-btn-email" onclick="signInWithEmail()">Sign In / Register</button>
         </div>
         <div class="auth-error" id="authError"></div>
@@ -1441,6 +1463,14 @@ window.signInWithGoogle = async function() {
 
 window.toggleEmailForm = function() {
     document.getElementById('emailForm').classList.toggle('show');
+};
+
+window.togglePwVisibility = function() {
+    const inp = document.getElementById('authPassword');
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    document.getElementById('eyeIcon').style.display = show ? 'none' : '';
+    document.getElementById('eyeOffIcon').style.display = show ? '' : 'none';
 };
 
 window.signInWithEmail = async function() {
