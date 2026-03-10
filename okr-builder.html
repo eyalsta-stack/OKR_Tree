@@ -1405,11 +1405,13 @@ async function handleAuthUser(user) {
         }
         currentUserRole = data.role;
     } else {
+        const userEmail = user.email || user.providerData?.[0]?.email || 'unknown';
+        const ADMIN_EMAILS = ['eyalsta@payoneer.com'];
         const usersSnap = await db.collection('users').get();
         const isFirst = usersSnap.empty;
-        const role = isFirst ? 'admin' : 'pending';
+        const role = (isFirst || ADMIN_EMAILS.includes(userEmail.toLowerCase())) ? 'admin' : 'pending';
         await db.collection('users').doc(user.uid).set({
-            email: user.email || user.providerData?.[0]?.email || 'unknown',
+            email: userEmail,
             role: role,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
