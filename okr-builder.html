@@ -963,7 +963,7 @@
 <div id="input-view" class="view">
     <div class="input-card">
         <h2>OKR Tree</h2>
-        <p class="subtitle">Select a department to load or generate an OKR tree (Initiative > Objective > Key Result).</p>
+        <p class="subtitle">Select a department to load or generate an OKR tree (Objective → Key Results → Initiatives).</p>
 
         <div class="row">
             <div class="form-group">
@@ -1277,10 +1277,7 @@
             <button class="btn btn-primary" onclick="saveEditModal()">Save Changes</button>
             <button class="btn" onclick="closeEditModal()">Cancel</button>
         </div>
-        <div class="em-add">
-            <button class="btn btn-sm" onclick="addChildNode('objective')">+ Add Objective</button>
-            <button class="btn btn-sm" onclick="addChildNode('kr')">+ Add Key Result</button>
-        </div>
+        <div class="em-add" id="emAdd"></div>
         <div class="em-delete">
             <button onclick="deleteEditNode()">Delete this node</button>
         </div>
@@ -1316,9 +1313,21 @@
     </div>
 
     <div class="guide-section collapsed">
+        <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Meaning of Each Level</h4>
+        <div class="guide-content">
+            <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+                <tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:0.4rem 0.5rem">Level</th><th style="text-align:left;padding:0.4rem 0.5rem">Purpose</th></tr>
+                <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Objective</td><td style="padding:0.4rem 0.5rem">The outcome you want to achieve</td></tr>
+                <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Key Results</td><td style="padding:0.4rem 0.5rem">Metrics that prove the outcome is improving</td></tr>
+                <tr><td style="padding:0.4rem 0.5rem;font-weight:600">Initiatives</td><td style="padding:0.4rem 0.5rem">Actions or projects executed to move the metrics</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Objectives</h4>
         <div class="guide-content">
-            <p>An Objective is a <strong>qualitative description</strong> of a desired outcome reflecting a change in customer behavior, experience, or business performance.</p>
+            <p>An Objective is the <strong>outcome you want to achieve</strong> — a qualitative description of desired change in customer behavior, experience, or business performance.</p>
             <p>Structure: <code>Improve / Increase / Reduce / Strengthen [customer behavior or business outcome]</code></p>
             <div class="guide-example">
                 <div class="guide-ex-col">
@@ -1344,9 +1353,17 @@
     <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Key Results</h4>
         <div class="guide-content">
-            <p>Key Results are <strong>quantitative measures</strong> of whether the Objective is being achieved. They measure observable outcomes, not activities.</p>
+            <p>Key Results are <strong>metrics that prove the outcome is improving</strong> — quantitative measures of whether the Objective is being achieved. They measure observable outcomes, not activities.</p>
             <p>Structure: <code>Increase/Reduce [metric] from [baseline] to [target] within [time]</code></p>
             <p>KR types: <strong>Adoption</strong> (do users use it?), <strong>Engagement</strong> (how deeply?), <strong>Task success</strong> (do they complete it?), <strong>Efficiency</strong> (faster/easier?), <strong>Business impact</strong> (revenue, retention, cost).</p>
+        </div>
+    </div>
+
+    <div class="guide-section collapsed">
+        <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Initiatives</h4>
+        <div class="guide-content">
+            <p>Initiatives are <strong>actions or projects executed to move the metrics</strong>. They are the work you do to achieve the Key Results.</p>
+            <p>Initiatives sit under Key Results — each Key Result can have one or more initiatives that drive progress toward that metric.</p>
         </div>
     </div>
 
@@ -1383,13 +1400,12 @@
         <div class="guide-content">
             <p>The hierarchy:</p>
             <p style="font-family:monospace;font-size:0.75rem;color:var(--text);line-height:1.8">
-                North Star Outcome<br>
-                &nbsp;&nbsp;&#8627; Strategic Objectives<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#8627; Team Objectives<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8627; Key Results<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8627; Experiments / Solutions (outside OKR)
+                Company / Department / Sub-Department<br>
+                &nbsp;&nbsp;&#8627; Objective (outcome you want)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#8627; Key Results (metrics that prove it)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8627; Initiatives (actions to move the metrics)
             </p>
-            <p><strong>Solutions must not appear inside OKRs.</strong> They belong to experiments discovered during continuous discovery.</p>
+            <p><strong>Objective → Key Results → Initiatives.</strong> Outcomes first, then metrics, then the work that drives them.</p>
         </div>
     </div>
 
@@ -2210,7 +2226,9 @@ CORE PRINCIPLES:
 
 Given a strategy document for the "${dept}" department, extract the underlying outcomes and structure them into a clean OKR tree.
 
-Return ONLY valid JSON (no markdown, no code fences) matching this exact schema:
+Return ONLY valid JSON (no markdown, no code fences) matching this exact schema.
+Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (actions to move the metrics).
+
 {
   "name": "<Department> Strategy <Year Range>",
   "type": "company",
@@ -2218,25 +2236,24 @@ Return ONLY valid JSON (no markdown, no code fences) matching this exact schema:
   "detail": "<One sentence describing the north star outcome>",
   "children": [
     {
-      "name": "<Strategic Objective - qualitative outcome>",
-      "type": "initiative",
+      "name": "<Objective - the outcome you want to achieve>",
+      "type": "objective",
       "color": "<hex color>",
-      "companyOkr": "<Company OKR this supports, e.g. 'Grow Upmarket' or 'Brilliant at the Basics'>",
-      "detail": "<One sentence describing the desired change in behavior or experience>",
+      "companyOkr": "<Company OKR this supports>",
+      "detail": "<One sentence describing the desired outcome>",
       "children": [
         {
-          "name": "<Team Objective - qualitative outcome>",
-          "type": "objective",
+          "name": "<Key Result - metric that proves the outcome is improving>",
+          "type": "kr",
+          "timeline": "<year or quarter>",
           "color": "<same hex as parent>",
-          "companyOkr": "<Same company OKR as parent initiative>",
-          "detail": "<One sentence describing the customer/business behavior change this objective targets>",
+          "detail": "<What this metric measures>",
           "children": [
             {
-              "name": "<Key Result - metric from baseline to target>",
-              "type": "kr",
-              "timeline": "<year or quarter>",
+              "name": "<Initiative - action or project to move the metric>",
+              "type": "initiative",
               "color": "<same hex as parent>",
-              "detail": "<What this metric measures and why it signals the outcome is being achieved>"
+              "detail": "<What this initiative does>"
             }
           ]
         }
@@ -2246,17 +2263,17 @@ Return ONLY valid JSON (no markdown, no code fences) matching this exact schema:
 }
 
 RULES:
-1. Objectives must describe desired OUTCOMES (behavior change, experience improvement, business impact) — NEVER features, deliverables, or solutions.
-2. Key Results must measure OBSERVABLE OUTCOMES — adoption, engagement, task success, efficiency, or business impact.
-3. Key Results should follow the format: "[Increase/Reduce] [metric] from [baseline] to [target]" when the document provides numbers.
-4. Each Strategic Objective (initiative) should have 2-4 Team Objectives.
-5. Each Team Objective must have exactly 3 Key Results.
+1. Objective = the outcome you want to achieve. Must describe desired OUTCOMES — NEVER features, deliverables, or solutions.
+2. Key Results = metrics that prove the outcome is improving. Must measure OBSERVABLE OUTCOMES.
+3. Initiatives = actions or projects executed to move the metrics. Sit under Key Results.
+4. Key Results should follow: "[Increase/Reduce] [metric] from [baseline] to [target]" when numbers are provided.
+5. Each Objective should have 2-5 Key Results. Each Key Result can have 1+ Initiatives.
 6. NEVER reference specific technologies, tools, platforms, or features (e.g. no "Braze", "CEP", "chatbot", "AI assistant"). If the document describes a solution, translate it into the outcome it intends to achieve.
 7. Every node MUST have a "detail" field with a plain-English explanation of the intended behavior change.
 8. Use distinct hex colors per strategic objective. Choose from: #9b30ff, #22d3ee, #06b6d4, #22c55e, #4ade80, #a855f7, #c084fc, #e879f9, #6366f1, #14b8a6.
 9. Keep names concise (under 50 characters). Put context in "detail".
 10. If the document states metrics/targets, use them. If not, describe the qualitative outcome.
-11. Every initiative and objective MUST have a "companyOkr" field mapping to one of these company OKRs: "Grow Upmarket" (adoption, usage, expansion) or "Brilliant at the Basics" (retention, CX, cost discipline, compliance). Choose the best fit based on the objective's focus.
+11. Every objective MUST have a "companyOkr" field mapping to one of: "Grow Up‑Market", "Flawless at the Fundamentals", "Strengthen the P&L", "Invest and Innovate". Choose the best fit based on the objective's focus.
 12. Return ONLY the JSON object. No explanatory text, no markdown.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -2793,7 +2810,7 @@ function reviewOKRs() {
             if (krs.length < 2) issues.push({ node: n.name, type: 'objective', issue: `Has only <strong>${krs.length} Key Result(s)</strong>. Best practice is 2-5 KRs per objective.` });
         }
         if ((n.type === 'objective' || n.type === 'initiative') && !n.companyOkr) {
-            issues.push({ node: n.name, type: n.type, issue: 'Not mapped to a <strong>Company OKR</strong>. Consider linking to "Grow Upmarket" or "Brilliant at the Basics".' });
+            issues.push({ node: n.name, type: n.type, issue: 'Not mapped to a <strong>Company OKR</strong>. Link to one of the company OKRs in Settings.' });
         }
     });
 
@@ -3869,6 +3886,31 @@ function openEditModal(event, d, isCompany) {
 
     const typeLabel = TYPE_LABELS[data.type] || data.type;
     document.getElementById('emTitle').textContent = 'Edit ' + typeLabel;
+
+    const emAdd = document.getElementById('emAdd');
+    emAdd.innerHTML = '';
+    const canAddObjective = data.type === 'initiative';
+    const canAddKR = data.type === 'objective';
+    const canAddInitiative = data.type === 'kr';
+    if (canAddObjective) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm'; btn.textContent = '+ Add Objective';
+        btn.onclick = () => addChildNode('objective');
+        emAdd.appendChild(btn);
+    }
+    if (canAddKR) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm'; btn.textContent = '+ Add Key Result';
+        btn.onclick = () => addChildNode('kr');
+        emAdd.appendChild(btn);
+    }
+    if (canAddInitiative) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm'; btn.textContent = '+ Add Initiative';
+        btn.onclick = () => addChildNode('initiative');
+        emAdd.appendChild(btn);
+    }
+
     document.getElementById('editOverlay').classList.add('open');
 }
 
