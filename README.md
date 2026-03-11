@@ -2,6 +2,8 @@
 
 Multi-department OKR tree with Company Overview, department trees, and OKRA chatbot. Built for the Continuous Discovery Habits framework (Teresa Torres).
 
+**Zoom & pan:** Scroll and drag over the **tree canvas** only; browser zoom/scroll is disabled over the canvas so zoom stays on the tree.
+
 ## Open the app (shareable link)
 
 **Use this URL to open the app in your browser:**

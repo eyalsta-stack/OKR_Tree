@@ -15,7 +15,7 @@
             --radius: 10px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; overflow: hidden; }
+        html, body { height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: pan-x pan-y; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); accent-color: #9b30ff; display: flex; flex-direction: column; }
         ::selection { background: #9b30ff; color: #fff; }
 
@@ -188,7 +188,7 @@
         .info-msg { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.35rem; }
 
         /* TREE VIEW */
-        #tree-view { flex-direction: column; height: calc(100vh - 94px); }
+        #tree-view, #company-view { flex-direction: column; height: calc(100vh - 94px); min-height: 0; }
         .tree-toolbar {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
@@ -210,6 +210,8 @@
                 linear-gradient(to right, #ffffff0f 1px, transparent 1px),
                 linear-gradient(to bottom, #ffffff0f 1px, transparent 1px);
             background-size: 32px 32px;
+            touch-action: none;
+            min-height: 0;
         }
         #tree-container { flex: 1; position: relative; overflow: hidden; }
         #tree-container svg, #company-tree-container svg { width: 100%; height: 100%; }
@@ -418,14 +420,13 @@
         .gallery-count { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.6rem; }
 
         /* COMPANY VIEW */
-        #company-view { flex-direction: column; height: calc(100vh - 94px); }
         .company-toolbar {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
         }
         .company-toolbar .ct-title { font-weight: 700; font-size: 0.95rem; }
         .company-toolbar .ct-subtitle { color: var(--text-muted); font-size: 0.75rem; }
-        #company-tree-container { flex: 1; position: relative; overflow: hidden; }
+        #company-tree-container { flex: 1; position: relative; overflow: hidden; min-height: 0; }
         .company-empty-state {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100%; color: var(--text-muted); text-align: center; padding: 2rem;
@@ -2147,8 +2148,24 @@ window.copyShareLink = function() {
     }
 };
 
+// Capture wheel on tree canvases so zoom is canvas-level only (no browser zoom/scroll)
+function installCanvasWheelCapture() {
+    const treeContainer = document.getElementById('tree-container');
+    const companyContainer = document.getElementById('company-tree-container');
+    function onWheel(e) {
+        const el = e.target;
+        if (!el || !el.closest) return;
+        if (el.closest('#tree-container') || el.closest('#company-tree-container')) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+    document.addEventListener('wheel', onWheel, { passive: false });
+}
+
 // Init
 window.addEventListener('DOMContentLoaded', () => {
+    installCanvasWheelCapture();
     const savedKey = localStorage.getItem('okr_api_key');
     if (savedKey) document.getElementById('apiKey').value = savedKey;
     // Brief delay so layout is ready (fixes empty canvas when opened via iframe/htmlpreview)
