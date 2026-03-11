@@ -533,7 +533,6 @@ const svg = d3.select("#tree-container").append("svg")
 const g = svg.append("g");
 
 const zoom = d3.zoom()
-    .scaleExtent([2, 3])
     .on("zoom", (event) => g.attr("transform", event.transform));
 
 svg.call(zoom);
@@ -734,7 +733,7 @@ function zoomToNode(d) {
         const dy = maxY - minY + 80;
         const w = container.clientWidth;
         const h = container.clientHeight;
-        const scale = Math.max(Math.min(w / dx, h / dy, 1.8) * 0.85, 2);
+        const scale = Math.min(w / dx, h / dy) * 0.85;
         const cx = (minX + maxX) / 2;
         const cy = (minY + maxY) / 2;
 
@@ -828,7 +827,7 @@ function expandAll() {
         const dy = maxY - minY + 200;
         const w = container.clientWidth;
         const h = container.clientHeight;
-        const scale = Math.max(Math.min(w / dx, h / dy, 1) * 0.85, 2);
+        const scale = Math.min(w / dx, h / dy) * 0.85;
         svg.transition().duration(600)
             .call(zoom.transform, d3.zoomIdentity
                 .translate(w / 2 - (minX + maxX) / 2 * scale, h / 2 - (minY + maxY) / 2 * scale)

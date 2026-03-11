@@ -4230,7 +4230,7 @@ function _renderTreeCore(data) {
         .attr('rx', 6);
     g = svg.append('g');
 
-    zoomBehavior = d3.zoom().scaleExtent([2, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
+    zoomBehavior = d3.zoom().scaleExtent([0.05, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
         .filter(e => (!e.ctrlKey && !e.metaKey) || e.type === 'wheel')
         .on('zoom', (event) => g.attr('transform', event.transform));
     svg.call(zoomBehavior).on('dblclick.zoom', null);
@@ -4344,7 +4344,7 @@ function fitTreeToScreen(targetSvg, zoom, treeRoot, container, horizontal, durat
     });
     const w = container.clientWidth, h = container.clientHeight;
     const dx = maxX - minX || 1, dy = maxY - minY || 1;
-    const scale = Math.max(Math.min(w / dx, h / dy, 1.5) * 0.9, 2);
+    const scale = Math.min(Math.max(Math.min(w / dx, h / dy) * 0.85, 0.05), 5);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     targetSvg.transition().duration(duration).call(zoom.transform,
         d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale));
@@ -5500,7 +5500,7 @@ function _renderCompanyTreeCore(companyData) {
     companySvg = d3.select(companyContainer).append('svg').attr('class', 'tree-svg').attr('width', width).attr('height', height);
     companyG = companySvg.append('g');
 
-    companyZoom = d3.zoom().scaleExtent([2, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
+    companyZoom = d3.zoom().scaleExtent([0.05, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
         .filter(e => (!e.ctrlKey && !e.metaKey) || e.type === 'wheel')
         .on('zoom', (e) => companyG.attr('transform', e.transform));
     companySvg.call(companyZoom).on('dblclick.zoom', null);
@@ -5515,11 +5515,16 @@ function _renderCompanyTreeCore(companyData) {
     companyRoot.x0 = 0; companyRoot.y0 = 0;
     companyRoot.descendants().forEach((d, i) => {
         d.id = i;
-        if (d.depth > 1 && d.children) { d._children = d.children; d.children = null; }
+        if (d._children) { d.children = d._children; d._children = null; }
     });
 
     updateCompanyTree(companyRoot);
-    setTimeout(() => { if (typeof fitCompanyWindow === 'function') fitCompanyWindow(); }, 100);
+    function scheduleFit() {
+        const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
+        if (w && h) setTimeout(() => { if (typeof fitCompanyWindow === 'function') fitCompanyWindow(); }, 450);
+        else setTimeout(scheduleFit, 50);
+    }
+    scheduleFit();
 }
 
 function updateCompanyTree(source) {
@@ -6250,32 +6255,31 @@ function close360View() {
 
 function fitCompanyWindow() {
     if (!companyRoot || !companySvg || !companyZoom || !companyContainer) return;
+    companySvg.attr('width', companyContainer.clientWidth).attr('height', companyContainer.clientHeight);
     const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
     if (!w || !h) return;
     const CW = NODE_W, CH = NODE_H;
     const allVisible = companyRoot.descendants();
-    const maxDepth = d3.max(allVisible, n => n.depth) || 0;
-    const windowStart = Math.max(0, maxDepth - 3);
-    const windowEnd = windowStart + 3;
-    const windowNodes = allVisible.filter(n => n.depth >= windowStart && n.depth <= windowEnd);
-    if (windowNodes.length === 0) return;
+    if (allVisible.length === 0) return;
 
-    const pad = 50;
+    const pad = 80;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    windowNodes.forEach(n => {
+    allVisible.forEach(n => {
         const nx = companyHorizontal ? n.y : n.x;
         const ny = companyHorizontal ? n.x : n.y;
+        if (typeof nx !== 'number' || typeof ny !== 'number' || !Number.isFinite(nx) || !Number.isFinite(ny)) return;
         minX = Math.min(minX, nx - CW / 2 - pad);
         maxX = Math.max(maxX, nx + CW / 2 + pad);
         minY = Math.min(minY, ny - CH / 2 - pad);
         maxY = Math.max(maxY, ny + CH / 2 + pad);
     });
 
-    const bw = maxX - minX || 1, bh = maxY - minY || 1;
-    const scale = Math.max(Math.min(w / bw, h / bh, 1.5) * 0.88, 2);
+    const bw = maxX - minX, bh = maxY - minY;
+    if (!Number.isFinite(bw) || !Number.isFinite(bh) || bw <= 0 || bh <= 0) return;
+    const scale = Math.min(Math.max(Math.min(w / bw, h / bh) * 0.8, 0.05), 5);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-    companySvg.transition().duration(750).call(companyZoom.transform,
-        d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale));
+    const t = d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale);
+    companySvg.call(companyZoom.transform, t);
 }
 
 window.companyExpandAll = function() {
