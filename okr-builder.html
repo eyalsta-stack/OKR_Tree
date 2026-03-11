@@ -471,6 +471,8 @@
         .guide-content p { margin-bottom: 0.5rem; }
         .guide-content strong { color: var(--text); }
         .guide-content code { background: var(--bg); padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.75rem; color: var(--green); }
+        .guide-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        .guide-table td { border: 1px solid var(--border); padding: 0.3rem 0.6rem; }
         .guide-rule {
             background: var(--bg); border-left: 3px solid var(--accent); border-radius: 4px;
             padding: 0.5rem 0.75rem; margin-bottom: 0.4rem; font-size: 0.78rem; color: var(--text);
@@ -492,6 +494,43 @@
             color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 0.25rem;
         }
         .guide-close:hover { color: var(--text); }
+
+        /* SHARED DEPARTMENTS PANEL */
+        .shared-depts-overlay {
+            position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.4);
+            display: none; align-items: center; justify-content: center;
+        }
+        .shared-depts-overlay.open { display: flex; }
+        .shared-depts-panel {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+            min-width: 320px; max-width: 420px; max-height: 80vh; overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+        .shared-depts-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+        .shared-depts-header h3 { font-size: 0.9rem; margin: 0; color: var(--accent); }
+        .shared-depts-close {
+            background: none; border: none; color: var(--text-muted);
+            font-size: 1.4rem; cursor: pointer; padding: 0 0.25rem; line-height: 1;
+        }
+        .shared-depts-close:hover { color: var(--text); }
+        .shared-depts-objective {
+            padding: 10px 16px; font-size: 0.85rem; font-weight: 600; color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+        .shared-depts-list {
+            padding: 12px 16px; margin: 0; list-style: none; max-height: 300px; overflow-y: auto;
+        }
+        .shared-depts-list li {
+            padding: 8px 12px; margin-bottom: 4px; background: rgba(34,211,238,0.08);
+            border-radius: 6px; font-size: 0.75rem; color: var(--text);
+            border-left: 3px solid #22d3ee;
+        }
+        .shared-depts-similar { padding: 12px 16px; border-top: 1px solid var(--border); }
+        .shared-depts-similar-title { font-size: 0.7rem; font-weight: 600; color: #a78bfa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* SUGGESTION PANEL */
         .suggestion-bar {
@@ -946,6 +985,7 @@
         <button class="btn btn-sm" id="navCompany" onclick="showCompanyView()">Company Overview</button>
         <button class="btn btn-sm" id="newTreeBtn" onclick="showInputView()">+ New Tree</button>
         <button class="btn btn-sm" onclick="toggleGuide()" style="border-color:var(--accent);color:#ffffff">OKR Guide</button>
+        <button class="btn btn-sm" onclick="copyShareLink()" title="Copy shareable link">Share link</button>
         <div class="user-pill" id="userPill" onclick="openSettings()" style="display:none" title="Account & Settings">
             <div class="pill-avatar" id="pillAvatar"></div>
             <span class="pill-name" id="pillName"></span>
@@ -1239,6 +1279,22 @@
 <!-- TOOLTIP -->
 <div class="tooltip" id="tooltip"></div>
 
+<!-- SHARED DEPARTMENTS PANEL (for objectives) -->
+<div class="shared-depts-overlay" id="sharedDeptsOverlay" onclick="if(event.target===this)closeSharedDeptsPanel()">
+    <div class="shared-depts-panel" onclick="event.stopPropagation()">
+        <div class="shared-depts-header">
+            <h3>\u{1F517} Shared with sub-departments</h3>
+            <button class="shared-depts-close" onclick="closeSharedDeptsPanel()">&times;</button>
+        </div>
+        <div class="shared-depts-objective" id="sharedDeptsObjectiveName"></div>
+        <ul class="shared-depts-list" id="sharedDeptsList"></ul>
+        <div class="shared-depts-similar" id="sharedDeptsSimilar" style="display:none">
+            <div class="shared-depts-similar-title">Similar objectives in:</div>
+            <ul class="shared-depts-list" id="sharedDeptsSimilarList"></ul>
+        </div>
+    </div>
+</div>
+
 <!-- EDIT MODAL -->
 <div class="edit-overlay" id="editOverlay" onclick="if(event.target===this)closeEditModal()">
     <div class="edit-modal">
@@ -1374,6 +1430,99 @@
     </div>
 
     <div class="guide-section collapsed">
+        <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Best Structure for Writing an Initiative</h4>
+        <div class="guide-content">
+            <p style="margin-bottom:1rem"><strong>1. Initiative Name</strong> — A short descriptive title of the solution or experiment.</p>
+            <div class="guide-rule">Example: AI Support Assistant for Self-Service Resolution</div>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>2. Objective Alignment</strong> — Which Objective this initiative supports.</p>
+            <table class="guide-table" style="margin:0.3rem 0"><tr><td style="padding:0.3rem 0.6rem;font-weight:600">Objective</td><td style="padding:0.3rem 0.6rem">Improve customers' ability to resolve issues independently</td></tr></table>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>3. Target Key Results</strong> — The Key Results this initiative is expected to impact. An initiative may impact multiple KRs.</p>
+            <table class="guide-table" style="margin:0.3rem 0;font-size:0.75rem">
+                <tr><td style="padding:0.3rem 0.6rem;font-weight:600">Key Result</td><td style="padding:0.3rem 0.6rem">Current</td><td style="padding:0.3rem 0.6rem">Target</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Self-service resolution rate</td><td style="padding:0.3rem 0.6rem">35%</td><td style="padding:0.3rem 0.6rem">55%</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Support ticket volume</td><td style="padding:0.3rem 0.6rem">12k/month</td><td style="padding:0.3rem 0.6rem">8k/month</td></tr>
+            </table>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>4. Problem / Opportunity</strong> — Describe the user problem or opportunity. Connects the initiative to customer discovery insights.</p>
+            <div class="guide-rule">Customers struggle to find answers in the knowledge base and frequently escalate to support agents for simple issues.</div>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>5. Hypothesis</strong> — The expected impact of the initiative.</p>
+            <p style="font-size:0.8rem;margin:0.3rem 0;color:var(--text-muted)">Structure: If we [initiative], then [user behavior will change], which will improve [Key Result metric].</p>
+            <div class="guide-rule">If we provide an AI assistant that answers common support questions, customers will resolve issues independently, increasing the self-service resolution rate.</div>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>6. Solution Description</strong> — A short description of the initiative itself.</p>
+            <ul style="margin:0.3rem 0;padding-left:1.2rem"><li>AI chatbot trained on support knowledge base</li><li>Embedded inside support center</li><li>Suggests troubleshooting steps</li></ul>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>7. Success Metrics</strong> — Metrics used to evaluate the initiative's impact.</p>
+            <table class="guide-table" style="margin:0.3rem 0;font-size:0.75rem">
+                <tr><td style="padding:0.3rem 0.6rem;font-weight:600">Metric</td><td style="padding:0.3rem 0.6rem">Target</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">AI answer acceptance rate</td><td style="padding:0.3rem 0.6rem">&gt;60%</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Deflected support tickets</td><td style="padding:0.3rem 0.6rem">+25%</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">AI interaction CSAT</td><td style="padding:0.3rem 0.6rem">&gt;4.2</td></tr>
+            </table>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>8. Experiment Design</strong> (Optional but recommended) — Continuous discovery emphasizes experiments rather than assumptions.</p>
+            <table class="guide-table" style="margin:0.3rem 0;font-size:0.75rem">
+                <tr><td style="padding:0.3rem 0.6rem;font-weight:600">Element</td><td style="padding:0.3rem 0.6rem">Description</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Experiment type</td><td style="padding:0.3rem 0.6rem">Pilot release</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Test group</td><td style="padding:0.3rem 0.6rem">20% of support users</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Duration</td><td style="padding:0.3rem 0.6rem">4 weeks</td></tr>
+            </table>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>9. Owner &amp; Timeline</strong></p>
+            <table class="guide-table" style="margin:0.3rem 0;font-size:0.75rem">
+                <tr><td style="padding:0.3rem 0.6rem;font-weight:600">Field</td><td style="padding:0.3rem 0.6rem">Example</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Owner</td><td style="padding:0.3rem 0.6rem">Product Team – Support Experience</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">Start</td><td style="padding:0.3rem 0.6rem">Q2 Week 1</td></tr>
+                <tr><td style="padding:0.3rem 0.6rem">End</td><td style="padding:0.3rem 0.6rem">Q2 Week 8</td></tr>
+            </table>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>Complete Initiative Template</strong></p>
+            <div class="guide-rule" style="white-space:pre-wrap;font-size:0.75rem;line-height:1.6">Initiative Name
+Objective Alignment
+• Objective:
+
+Target Key Results
+• KR1:
+• KR2:
+
+Problem / Opportunity
+
+Hypothesis
+If we [initiative],
+then [user behavior change],
+which will improve [Key Result].
+
+Solution Description
+
+Success Metrics
+
+Experiment Design
+
+Owner
+
+Timeline</div>
+
+            <p style="margin:1.2rem 0 0.5rem"><strong>Example Initiative</strong></p>
+            <div class="guide-rule" style="font-size:0.8rem;line-height:1.55">
+                <strong>Initiative:</strong> AI Support Assistant<br>
+                <strong>Objective:</strong> Improve customers' ability to resolve issues independently.<br><br>
+                <strong>Target Key Results</strong><br>
+                • Increase self-service resolution from 35% → 55%<br>
+                • Reduce support ticket volume from 12k → 8k<br><br>
+                <strong>Problem</strong> — Users cannot easily find answers in the knowledge base.<br><br>
+                <strong>Hypothesis</strong> — If customers can ask an AI assistant support questions, they will resolve issues without opening tickets.<br><br>
+                <strong>Solution</strong> — Deploy AI assistant inside the support center trained on support articles.<br><br>
+                <strong>Success Metrics</strong> — AI answer acceptance rate &gt;60%, Support ticket deflection +25%
+            </div>
+
+            <div class="guide-rule" style="margin-top:1rem;border-left:3px solid var(--accent)"><strong>Key Principle:</strong> Every initiative must clearly state which KR it is intended to improve. If an initiative cannot map to a KR, it likely should not be prioritized.</div>
+        </div>
+    </div>
+
+    <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Creation Rules</h4>
         <div class="guide-content">
             <div class="guide-rule"><strong>Rule 1:</strong> Objectives must describe desired outcomes, not solutions.</div>
@@ -1464,9 +1613,13 @@ async function getUsers() {
     if (raw) users = JSON.parse(raw);
     const adminHash = await getAdminHash();
     if (!users[ADMIN_EMAIL] || users[ADMIN_EMAIL].passwordHash !== adminHash) {
-        users[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: adminHash, role: 'admin' };
+        users[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: adminHash, role: 'admin', status: 'approved' };
         localStorage.setItem('payokr_users', JSON.stringify(users));
     }
+    // Backwards compat: users without status are approved
+    Object.keys(users).forEach(email => {
+        if (!users[email].status) users[email].status = 'approved';
+    });
     return users;
 }
 
@@ -1570,9 +1723,16 @@ window.authSubmit = async function() {
             return;
         }
         const isFirst = Object.keys(users).length === 0;
-        users[email] = { name: email.split('@')[0], passwordHash: hash, role: isFirst ? 'admin' : 'spectator' };
-        saveUsers(users);
-        await loginUser(email);
+        if (isFirst) {
+            users[email] = { name: email.split('@')[0], passwordHash: hash, role: 'admin', status: 'approved' };
+            saveUsers(users);
+            await loginUser(email);
+        } else {
+            users[email] = { name: email.split('@')[0], passwordHash: hash, role: 'spectator', status: 'pending' };
+            saveUsers(users);
+            document.getElementById('authError').innerHTML = '<span style="color:#4ade80">Registration successful. An admin will review your account and assign your role. You can sign in once approved.</span>';
+            toggleAuthMode();
+        }
     } else {
         const user = users[email];
         if (!user) {
@@ -1581,6 +1741,10 @@ window.authSubmit = async function() {
         }
         if (hash !== user.passwordHash) {
             document.getElementById('authError').textContent = 'Incorrect password.';
+            return;
+        }
+        if ((user.status || 'approved') === 'pending') {
+            document.getElementById('authError').textContent = 'Your account is pending approval. An admin will assign your role soon.';
             return;
         }
         await loginUser(email);
@@ -1646,12 +1810,15 @@ window.switchSettingsTab = async function(tab) {
     } else if (tab === 'users') {
         const emails = Object.keys(users);
         const isAdmin = hasPermission('manageUsers');
-        let rows = '';
-        emails.forEach(email => {
+        const approved = emails.filter(e => (users[e].status || 'approved') === 'approved');
+        const pending = emails.filter(e => users[e].status === 'pending');
+        let approvedRows = '';
+        let pendingRows = '';
+        approved.forEach(email => {
             const u = users[email];
             const isSelf = email === currentUserEmail;
             const initials = getInitials(u.name || '', email);
-            rows += `<div class="user-row">
+            approvedRows += `<div class="user-row">
                 <div class="user-row-avatar ${u.role}">${initials}</div>
                 <div class="user-row-info">
                     <div class="user-row-name">${u.name || email}${isSelf ? ' <span style="color:var(--text-muted);font-size:0.72rem">(you)</span>' : ''}</div>
@@ -1667,9 +1834,30 @@ window.switchSettingsTab = async function(tab) {
                 ` : `<span style="font-size:0.75rem;color:var(--text-muted);text-transform:capitalize">${u.role}</span>`}
             </div>`;
         });
+        if (isAdmin && pending.length > 0) {
+            pending.forEach(email => {
+                const u = users[email];
+                const initials = getInitials(u.name || '', email);
+                pendingRows += `<div class="user-row user-row-pending">
+                    <div class="user-row-avatar spectator">${initials}</div>
+                    <div class="user-row-info">
+                        <div class="user-row-name">${u.name || email}</div>
+                        <div class="user-row-email">${email} <span style="color:var(--accent);font-size:0.7rem">pending</span></div>
+                    </div>
+                    <select class="user-role-select" id="pendingRole-${email.replace(/[@.]/g,'_')}">
+                        <option value="spectator">Spectator</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <button class="auth-btn" style="padding:0.25rem 0.5rem;font-size:0.7rem" onclick="approveUser('${email}')">Approve</button>
+                    <button class="user-remove" onclick="removeUser('${email}')" title="Reject">&times;</button>
+                </div>`;
+            });
+        }
         body.innerHTML = `
-            <div class="settings-section-title">${emails.length} User${emails.length !== 1 ? 's' : ''}</div>
-            ${rows}
+            <div class="settings-section-title">${approved.length} User${approved.length !== 1 ? 's' : ''}</div>
+            ${approvedRows}
+            ${pendingRows ? `<div class="settings-section-title" style="margin-top:1rem">${pending.length} Pending Approval</div>${pendingRows}` : ''}
         `;
     }
 };
@@ -1697,6 +1885,7 @@ let currentData = null;
 let currentDept = '';
 let isHorizontal = true;
 let root, svg, g, zoomBehavior, treeContainer;
+let lastExpandTime = 0;
 
 const TYPE_STYLES = { company: { bg: "#000000", borderW: 1.4 }, department: { bg: "#000000", borderW: 1.2 }, subdepartment: { bg: "#000000", borderW: 1 }, initiative: { bg: "#000000", borderW: 1 }, objective: { bg: "#120d22", borderW: 1 }, kr: { bg: "#151828", borderW: 0.8 } };
 const TYPE_LABELS = { company: "COMPANY", department: "DEPARTMENT", subdepartment: "SUB-DEPARTMENT", initiative: "INITIATIVE", objective: "OBJECTIVE", kr: "KEY RESULT" };
@@ -1949,11 +2138,23 @@ const dataStatus = document.getElementById('dataStatus');
 const uploadSection = document.getElementById('uploadSection');
 const generateBtn = document.getElementById('generateBtn');
 
+window.copyShareLink = function() {
+    const url = 'https://htmlpreview.github.io/?https://raw.githubusercontent.com/eyalsta-stack/OKR_Tree/main/okr-builder.html';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => alert('Share link copied to clipboard.')).catch(() => prompt('Copy this link:', url));
+    } else {
+        prompt('Copy this shareable link:', url);
+    }
+};
+
 // Init
 window.addEventListener('DOMContentLoaded', () => {
     const savedKey = localStorage.getItem('okr_api_key');
     if (savedKey) document.getElementById('apiKey').value = savedKey;
-    showCompanyView();
+    // Brief delay so layout is ready (fixes empty canvas when opened via iframe/htmlpreview)
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => showCompanyView());
+    });
 });
 
 // Custom dropdown logic
@@ -2565,11 +2766,13 @@ function showTreeView(data, dept, treeId, fromTab) {
 function annotateSharedOkrs(data, currentDept) {
     const otherTrees = getAllTrees().filter(t => t.dept !== currentDept);
     const otherOkrs = {};
+    const otherByTokens = [];
     function collectFromTree(node, deptLabel) {
         if (node.type === 'objective' || node.type === 'kr') {
             const key = node.name.trim().toLowerCase();
             if (!otherOkrs[key]) otherOkrs[key] = [];
             otherOkrs[key].push(deptLabel);
+            otherByTokens.push({ name: node.name, dept: deptLabel, tokens: tokenize((node.name || '') + ' ' + (node.detail || '')) });
         }
         if (node.children) node.children.forEach(c => collectFromTree(c, deptLabel));
     }
@@ -2577,9 +2780,19 @@ function annotateSharedOkrs(data, currentDept) {
     function annotate(node) {
         if (node.type === 'objective' || node.type === 'kr') {
             const key = node.name.trim().toLowerCase();
-            if (otherOkrs[key] && otherOkrs[key].length > 0) {
-                node.sharedWith = [...new Set(otherOkrs[key])];
+            const exact = otherOkrs[key] ? [...new Set(otherOkrs[key])] : [];
+            let similar = [];
+            if (exact.length === 0 && otherByTokens.length > 0) {
+                const myTokens = tokenize((node.name || '') + ' ' + (node.detail || ''));
+                const seen = new Set();
+                otherByTokens.forEach(o => {
+                    if (seen.has(o.dept)) return;
+                    const score = jaccardSimilarity(myTokens, o.tokens);
+                    if (score >= 0.5) { similar.push({ dept: o.dept, name: o.name }); seen.add(o.dept); }
+                });
             }
+            if (exact.length > 0) node.sharedWith = exact;
+            else if (similar.length > 0) node.similarSharedWith = similar;
         }
         if (node.children) node.children.forEach(annotate);
     }
@@ -2722,6 +2935,10 @@ function renderChatChips() {
     const actions = [
         { label: '🔍 Review my OKRs', action: 'review_okrs', needsTree: true },
         { label: '✏️ Rewrite an objective', action: 'rewrite_obj', needsTree: true },
+        { label: '✏️ Rewrite a KR', action: 'rewrite_kr', needsTree: true },
+        { label: '✏️ Rewrite an Initiative', action: 'rewrite_initiative', needsTree: true },
+        { label: '➕ Add Key Results', action: 'add_krs', needsTree: true },
+        { label: '➕ Add Initiative', action: 'add_initiative', needsTree: true },
         { label: '📊 Check my KRs', action: 'check_krs', needsTree: true },
         { label: '💡 Suggest missing OKRs', action: 'suggest_missing', needsTree: true },
         { label: '⚖️ Outcome vs Output?', action: 'outcome_vs_output', needsTree: false },
@@ -2790,6 +3007,40 @@ function collectNodes(node, list = []) {
     if (node.children) node.children.forEach(c => collectNodes(c, list));
     return list;
 }
+
+function findParent(root, targetNode) {
+    if (!root || root === targetNode) return null;
+    if (root.children) {
+        for (const c of root.children) {
+            if (c === targetNode) return root;
+            const found = findParent(c, targetNode);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+function findNodeByPath(node, path, depth = 0) {
+    if (!node) return null;
+    const key = path[depth];
+    if (depth === path.length - 1) return node.name === key ? node : null;
+    if (node.name !== key) return null;
+    if (!node.children) return null;
+    for (const c of node.children) {
+        const found = findNodeByPath(c, path, depth + 1);
+        if (found) return found;
+    }
+    return null;
+}
+
+window.refreshTreeFromData = function() {
+    if (!currentData) return;
+    const treeView = document.getElementById('tree-view');
+    if (treeView && treeView.classList.contains('active')) {
+        annotateSharedOkrs(currentData, currentDept);
+        renderTree(currentData);
+    }
+};
 
 function reviewOKRs() {
     if (!currentData) { addBotMessage('<p>No tree loaded. Please load or generate a tree first.</p>'); return; }
@@ -2896,6 +3147,10 @@ window.handleChipAction = function(action) {
     const labels = {
         review_okrs: '🔍 Review my OKRs',
         rewrite_obj: '✏️ Rewrite an objective',
+        rewrite_kr: '✏️ Rewrite a KR',
+        rewrite_initiative: '✏️ Rewrite an Initiative',
+        add_krs: '➕ Add Key Results',
+        add_initiative: '➕ Add Initiative',
         check_krs: '📊 Check my KRs',
         suggest_missing: '💡 Suggest missing OKRs',
         outcome_vs_output: '⚖️ Outcome vs Output?',
@@ -2912,6 +3167,10 @@ window.handleChipAction = function(action) {
             case 'check_krs': checkKRs(); break;
             case 'suggest_missing': suggestMissingOKRs(); break;
             case 'rewrite_obj': promptRewrite(); break;
+            case 'rewrite_kr': promptRewriteKR(); break;
+            case 'rewrite_initiative': promptRewriteInitiative(); break;
+            case 'add_krs': promptAddKRs(); break;
+            case 'add_initiative': promptAddInitiative(); break;
             case 'outcome_vs_output':
                 addBotMessage(
                     `<p><strong>Outcome vs Output — the key distinction:</strong></p>
@@ -3007,12 +3266,16 @@ window.rewriteObjective = async function(idx) {
                 let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
                 try {
                     const result = JSON.parse(content);
+                    const krsJson = JSON.stringify(result.keyResults || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     let html = `<p><strong>Suggested rewrite:</strong></p>
                         <p><code>${escapeHtml(result.rewritten)}</code></p>
                         <p>${escapeHtml(result.reasoning)}</p>
                         <p><strong>Suggested Key Results:</strong></p><ul>`;
-                    result.keyResults.forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
-                    html += `</ul><div class="chat-btn-inline" onclick="applyRewrite(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}')">Apply this rewrite</div>`;
+                    (result.keyResults || []).forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
+                    html += `</ul><div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+                        <div class="chat-btn-inline" onclick="applyRewrite(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>
+                        <div class="chat-btn-inline" onclick="applyRewriteWithKRs(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}', '${krsJson}')">Apply rewrite + add KRs</div>
+                    </div>`;
                     addBotMessage(html);
                 } catch {
                     addBotMessage(`<p>AI response:</p><p>${escapeHtml(content)}</p>`);
@@ -3085,7 +3348,325 @@ function localRewrite(target) {
         <p>${escapeHtml(reasoning)}</p>
         <p><strong>Suggested Key Results:</strong></p><ul>`;
     suggestedKRs.forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
-    html += `</ul><div class="chat-btn-inline" onclick="applyRewrite(${collectNodes(currentData).filter(n => n.type === 'objective' || n.type === 'initiative').indexOf(target)}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply this rewrite</div>`;
+    const objIdx = collectNodes(currentData).filter(n => n.type === 'objective' || n.type === 'initiative').indexOf(target);
+    const krsJson = JSON.stringify(suggestedKRs).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    html += `</ul><div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+        <div class="chat-btn-inline" onclick="applyRewrite(${objIdx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>
+        <div class="chat-btn-inline" onclick="applyRewriteWithKRs(${objIdx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}', '${krsJson}')">Apply rewrite + add KRs</div>
+    </div>`;
+    addBotMessage(html);
+}
+
+function promptRewriteKR() {
+    if (!currentData) { addBotMessage('<p>No tree loaded.</p>'); renderChatChips(); return; }
+    const nodes = collectNodes(currentData);
+    const krs = nodes.filter(n => n.type === 'kr');
+    if (krs.length === 0) { addBotMessage('<p>No Key Results found.</p>'); renderChatChips(); return; }
+    let html = '<p>Which Key Result would you like me to help rewrite? Click one:</p>';
+    krs.forEach((kr, i) => {
+        html += `<div class="chat-btn-inline" onclick="rewriteKR(${i})">${escapeHtml(kr.name.substring(0, 55))}${kr.name.length > 55 ? '…' : ''}</div>`;
+    });
+    addBotMessage(html);
+}
+
+window.rewriteKR = async function(idx) {
+    const nodes = collectNodes(currentData);
+    const krs = nodes.filter(n => n.type === 'kr');
+    const target = krs[idx];
+    if (!target) return;
+    addUserMessage('Rewrite KR: ' + target.name);
+    showTyping();
+    const apiKey = document.getElementById('apiKey')?.value?.trim();
+    if (apiKey) {
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: 'You are an OKR coach. Rewrite the Key Result to be measurable with specific numbers. Format: [Increase/Reduce] [metric] from [baseline] to [target]. Respond in JSON: {"rewritten":"...","reasoning":"one sentence"}' },
+                        { role: 'user', content: `Current KR: "${target.name}"\nContext: ${target.detail || 'none'}` }
+                    ],
+                    temperature: 0.4, max_tokens: 200
+                })
+            });
+            hideTyping();
+            if (response.ok) {
+                const data = await response.json();
+                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                try {
+                    const result = JSON.parse(content);
+                    const rewritten = result.rewritten || target.name;
+                    addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>${escapeHtml(result.reasoning || '')}</p>
+                        <div class="chat-btn-inline" onclick="applyRewriteKR(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
+                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
+            } else { hideTyping(); localRewriteKR(target, idx); }
+        } catch (err) { hideTyping(); localRewriteKR(target, idx); }
+    } else { hideTyping(); localRewriteKR(target, idx); }
+    renderChatChips();
+};
+
+function localRewriteKR(target, idx) {
+    const name = target.name;
+    let rewritten = name;
+    if (!/\d/.test(name)) {
+        rewritten = name + ' from [baseline] to [target]';
+    } else if (!/from|to|%\d/.test(name)) {
+        rewritten = name.replace(/(\d+)/, '$1%') + ' (add timeframe if needed)';
+    }
+    addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p>
+        <div class="chat-btn-inline" onclick="applyRewriteKR(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
+}
+
+window.applyRewriteKR = function(idx, newName) {
+    applyUpdateNode('kr', idx, { name: newName });
+};
+
+function promptRewriteInitiative() {
+    if (!currentData) { addBotMessage('<p>No tree loaded.</p>'); renderChatChips(); return; }
+    const nodes = collectNodes(currentData);
+    const initiatives = nodes.filter(n => n.type === 'initiative');
+    if (initiatives.length === 0) { addBotMessage('<p>No initiatives found.</p>'); renderChatChips(); return; }
+    let html = '<p>Which Initiative would you like me to help rewrite? Click one:</p>';
+    initiatives.forEach((init, i) => {
+        html += `<div class="chat-btn-inline" onclick="rewriteInitiative(${i})">${escapeHtml(init.name.substring(0, 55))}${init.name.length > 55 ? '…' : ''}</div>`;
+    });
+    addBotMessage(html);
+}
+
+window.rewriteInitiative = async function(idx) {
+    const nodes = collectNodes(currentData);
+    const initiatives = nodes.filter(n => n.type === 'initiative');
+    const target = initiatives[idx];
+    if (!target) return;
+    const parentKR = findParent(currentData, target);
+    const parentKRName = parentKR ? parentKR.name : 'parent Key Result';
+    addUserMessage('Rewrite Initiative: ' + target.name);
+    showTyping();
+    const apiKey = document.getElementById('apiKey')?.value?.trim();
+    if (apiKey) {
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: `You are an OKR coach following the Continuous Discovery Habits framework. Initiatives are solutions or experiments under Key Results — they describe what we try to move the metric, not outcomes.
+
+Rewrite the Initiative so it clearly shows:
+1. **What** it is (solution or experiment)
+2. **Which Key Result** it impacts (the parent KR)
+3. **Why** it should move that metric
+4. **How** success will be evaluated
+
+Be concrete and actionable. Good examples: "Run A/B test of new onboarding flow to measure impact on activation rate", "Interview 10 users to validate friction points before redesign". Avoid vague deliverables; focus on testable experiments or specific solutions.
+
+Respond in JSON: {"rewritten":"...","reasoning":"one sentence"}` },
+                        { role: 'user', content: `Current Initiative: "${target.name}"\nParent Key Result: "${parentKRName}"\nContext: ${target.detail || 'none'}` }
+                    ],
+                    temperature: 0.4, max_tokens: 250
+                })
+            });
+            hideTyping();
+            if (response.ok) {
+                const data = await response.json();
+                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                try {
+                    const result = JSON.parse(content);
+                    const rewritten = result.rewritten || target.name;
+                    addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>${escapeHtml(result.reasoning || '')}</p>
+                        <div class="chat-btn-inline" onclick="applyRewriteInitiative(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
+                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
+            } else { hideTyping(); localRewriteInitiative(target, idx); }
+        } catch (err) { hideTyping(); localRewriteInitiative(target, idx); }
+    } else { hideTyping(); localRewriteInitiative(target, idx); }
+    renderChatChips();
+};
+
+function localRewriteInitiative(target, idx) {
+    const parentKR = findParent(currentData, target);
+    const krName = parentKR ? parentKR.name : 'the metric';
+    const words = target.name.split(/\s+/).slice(0, 4).join(' ').toLowerCase();
+    let rewritten;
+    if (/\b(build|launch|deploy|implement|create|ship)\b/i.test(target.name)) {
+        rewritten = `Run A/B test to measure impact of proposed change on ${krName.toLowerCase().substring(0, 40)}`;
+    } else if (words) {
+        rewritten = `Run experiment to validate ${words} and measure impact on ${krName.toLowerCase().substring(0, 35)}`;
+    } else {
+        rewritten = `Run experiment to validate hypothesis and measure impact on ${krName.toLowerCase().substring(0, 35)}`;
+    }
+    addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>Initiative should show: what it is, which KR it impacts, why it moves the metric, how success is evaluated.</p>
+        <div class="chat-btn-inline" onclick="applyRewriteInitiative(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
+}
+
+window.applyRewriteInitiative = function(idx, newName) {
+    applyUpdateNode('initiative', idx, { name: newName });
+};
+
+function promptAddKRs() {
+    if (!currentData) { addBotMessage('<p>No tree loaded.</p>'); renderChatChips(); return; }
+    const nodes = collectNodes(currentData);
+    const objectives = nodes.filter(n => n.type === 'objective' || n.type === 'initiative');
+    if (objectives.length === 0) { addBotMessage('<p>No objectives found. Add an objective first.</p>'); renderChatChips(); return; }
+
+    let html = '<p>Which objective should I add Key Results to? Click one:</p>';
+    objectives.forEach((o, i) => {
+        html += `<div class="chat-btn-inline" onclick="suggestKRsForObjective(${i})">${escapeHtml(o.name.substring(0, 55))}${o.name.length > 55 ? '…' : ''}</div>`;
+    });
+    addBotMessage(html);
+}
+
+window.suggestKRsForObjective = async function(idx) {
+    const nodes = collectNodes(currentData);
+    const objectives = nodes.filter(n => n.type === 'objective' || n.type === 'initiative');
+    const target = objectives[idx];
+    if (!target) return;
+
+    addUserMessage('Add KRs to: ' + target.name);
+    showTyping();
+
+    const apiKey = document.getElementById('apiKey')?.value?.trim();
+    if (apiKey) {
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: 'You are an OKR coach. Suggest 3 measurable Key Results for the given objective. Each KR must follow: [Increase/Reduce] [metric] from [baseline] to [target]. Be specific with numbers (X%, Y days, etc). Respond in JSON: {"keyResults":["KR1","KR2","KR3"]}' },
+                        { role: 'user', content: `Objective: "${target.name}"\nContext: ${target.detail || 'none'}` }
+                    ],
+                    temperature: 0.4, max_tokens: 400
+                })
+            });
+            hideTyping();
+            if (response.ok) {
+                const data = await response.json();
+                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                try {
+                    const result = JSON.parse(content);
+                    const krs = result.keyResults || [];
+                    const krsJson = JSON.stringify(krs).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    let html = '<p><strong>Suggested Key Results:</strong></p><ul>';
+                    krs.forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
+                    html += `</ul><div class="chat-btn-inline" onclick="applyAddKRs(${idx}, '${krsJson}')">Add these KRs</div>`;
+                    addBotMessage(html);
+                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
+            } else {
+                hideTyping();
+                localSuggestKRs(target, idx);
+            }
+        } catch (err) {
+            hideTyping();
+            localSuggestKRs(target, idx);
+        }
+    } else {
+        hideTyping();
+        localSuggestKRs(target, idx);
+    }
+    renderChatChips();
+};
+
+function localSuggestKRs(target, idx) {
+    const words = target.name.split(/\s+/).slice(0, 4).join(' ').toLowerCase();
+    const krs = [
+        `Increase success rate of ${words || 'this outcome'} from X% to Y%`,
+        `Reduce time-to-value from X days to Y days`,
+        `Achieve NPS/satisfaction score of Y for this area`
+    ];
+    const krsJson = JSON.stringify(krs).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    let html = '<p><strong>Suggested Key Results:</strong></p><ul>';
+    krs.forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
+    html += `</ul><div class="chat-btn-inline" onclick="applyAddKRs(${idx}, '${krsJson}')">Add these KRs</div>`;
+    addBotMessage(html);
+}
+
+function promptAddInitiative() {
+    if (!currentData) { addBotMessage('<p>No tree loaded.</p>'); renderChatChips(); return; }
+    const nodes = collectNodes(currentData);
+    const krs = nodes.filter(n => n.type === 'kr');
+    if (krs.length === 0) { addBotMessage('<p>No Key Results found. Add KRs under an objective first.</p>'); renderChatChips(); return; }
+
+    let html = '<p>Which Key Result should I add an Initiative to? Click one:</p>';
+    krs.forEach((kr, i) => {
+        html += `<div class="chat-btn-inline" onclick="suggestInitiativeForKR(${i})">${escapeHtml(kr.name.substring(0, 55))}${kr.name.length > 55 ? '…' : ''}</div>`;
+    });
+    addBotMessage(html);
+}
+
+window.suggestInitiativeForKR = async function(idx) {
+    const nodes = collectNodes(currentData);
+    const krs = nodes.filter(n => n.type === 'kr');
+    const target = krs[idx];
+    if (!target) return;
+
+    addUserMessage('Add Initiative to: ' + target.name);
+    showTyping();
+
+    const apiKey = document.getElementById('apiKey')?.value?.trim();
+    if (apiKey) {
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: `You are an OKR coach following the Continuous Discovery Habits framework. Initiatives are solutions or experiments under Key Results.
+
+Suggest 1 concrete Initiative that clearly shows:
+1. What it is (solution or experiment)
+2. Which Key Result it impacts (the given KR)
+3. Why it should move that metric
+4. How success will be evaluated
+
+Be specific: e.g. "Run A/B test of new onboarding flow to measure impact on activation rate". Avoid vague deliverables. Respond in JSON: {"name":"Initiative name","detail":"brief description covering why and how to evaluate"}` },
+                        { role: 'user', content: `Key Result: "${target.name}"\nContext: ${target.detail || 'none'}` }
+                    ],
+                    temperature: 0.4, max_tokens: 200
+                })
+            });
+            hideTyping();
+            if (response.ok) {
+                const data = await response.json();
+                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                try {
+                    const result = JSON.parse(content);
+                    const name = result.name || 'New Initiative';
+                    const detail = result.detail || '';
+                    const nameEsc = escapeHtml(name).replace(/'/g, "\\'");
+                    const detailEsc = escapeHtml(detail).replace(/'/g, "\\'");
+                    let html = `<p><strong>Suggested Initiative:</strong></p><p><code>${escapeHtml(name)}</code></p>`;
+                    if (detail) html += `<p>${escapeHtml(detail)}</p>`;
+                    html += `<div class="chat-btn-inline" onclick="applyAddInitiative(${idx}, '${nameEsc}', '${detailEsc}')">Add this Initiative</div>`;
+                    addBotMessage(html);
+                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
+            } else {
+                hideTyping();
+                localSuggestInitiative(target, idx);
+            }
+        } catch (err) {
+            hideTyping();
+            localSuggestInitiative(target, idx);
+        }
+    } else {
+        hideTyping();
+        localSuggestInitiative(target, idx);
+    }
+    renderChatChips();
+};
+
+function localSuggestInitiative(target, idx) {
+    const words = target.name.split(/\s+/).slice(0, 3).join(' ').toLowerCase();
+    const name = `Run A/B test to measure impact on ${words || 'this metric'}`;
+    const detail = 'Evaluate success by comparing metric before/after. Document learnings for iteration.';
+    const nameEsc = escapeHtml(name).replace(/'/g, "\\'");
+    const detailEsc = escapeHtml(detail).replace(/'/g, "\\'");
+    let html = `<p><strong>Suggested Initiative:</strong></p><p><code>${escapeHtml(name)}</code></p><p>${escapeHtml(detail)}</p>`;
+    html += `<div class="chat-btn-inline" onclick="applyAddInitiative(${idx}, '${nameEsc}', '${detailEsc}')">Add this Initiative</div>`;
     addBotMessage(html);
 }
 
@@ -3095,8 +3676,97 @@ window.applyRewrite = function(idx, newName) {
     const target = objectives[idx];
     if (!target) return;
     target.name = newName;
-    if (root) { update(root); }
+    refreshTreeFromData();
     addBotMessage(`<p>Applied! <strong>"${escapeHtml(newName)}"</strong> is now in your tree. Remember to <strong>Save</strong> when you're done.</p>`);
+    renderChatChips();
+};
+
+window.applyRewriteWithKRs = function(idx, newName, krsJson) {
+    const nodes = collectNodes(currentData);
+    const objectives = nodes.filter(n => n.type === 'objective' || n.type === 'initiative');
+    const target = objectives[idx];
+    if (!target) return;
+    target.name = newName;
+    let krs = [];
+    try { krs = JSON.parse(krsJson.replace(/&quot;/g, '"')); } catch (_) {}
+    if (krs.length > 0) {
+        if (!target.children) target.children = [];
+        const existingKRs = target.children.filter(c => c.type === 'kr');
+        krs.forEach(krText => {
+            target.children.push({
+                name: typeof krText === 'string' ? krText : krText.name || 'New KR',
+                type: 'kr',
+                color: target.color || '#9b30ff',
+                detail: '',
+                children: []
+            });
+        });
+    }
+    refreshTreeFromData();
+    addBotMessage(`<p>Applied! Updated objective and added <strong>${krs.length} Key Result(s)</strong>. Remember to <strong>Save</strong> when you're done.</p>`);
+    renderChatChips();
+};
+
+window.applyUpdateNode = function(nodeType, idx, updates) {
+    const nodes = collectNodes(currentData);
+    const filtered = nodes.filter(n => n.type === nodeType);
+    const target = filtered[idx];
+    if (!target) return;
+    if (updates.name) target.name = updates.name;
+    if (updates.detail !== undefined) target.detail = updates.detail;
+    if (updates.timeline !== undefined) target.timeline = updates.timeline;
+    refreshTreeFromData();
+    addBotMessage(`<p>Updated! Remember to <strong>Save</strong> when you're done.</p>`);
+    renderChatChips();
+};
+
+window.applyAddKRs = function(idx, krsJson) {
+    const nodes = collectNodes(currentData);
+    const objectives = nodes.filter(n => n.type === 'objective' || n.type === 'initiative');
+    const target = objectives[idx];
+    if (!target) return;
+    let krs = [];
+    try { krs = JSON.parse(krsJson.replace(/&quot;/g, '"')); } catch (_) {}
+    if (krs.length > 0) {
+        if (!target.children) target.children = [];
+        krs.forEach(kr => {
+            const item = typeof kr === 'string' ? { name: kr } : kr;
+            target.children.push({
+                name: item.name || 'New KR',
+                type: 'kr',
+                color: target.color || '#9b30ff',
+                detail: item.detail || '',
+                timeline: item.timeline || '',
+                children: []
+            });
+        });
+        refreshTreeFromData();
+        addBotMessage(`<p>Added <strong>${krs.length} Key Result(s)</strong>. Remember to <strong>Save</strong> when you're done.</p>`);
+    }
+    renderChatChips();
+};
+
+window.applyAddInitiative = function(idx, nameOrJson, detail) {
+    const nodes = collectNodes(currentData);
+    const krs = nodes.filter(n => n.type === 'kr');
+    const target = krs[idx];
+    if (!target) return;
+    let name = nameOrJson, det = detail;
+    if (detail === undefined && typeof nameOrJson === 'string' && (nameOrJson.startsWith('{') || nameOrJson.includes('&quot;'))) {
+        try {
+            const parsed = JSON.parse(nameOrJson.replace(/&quot;/g, '"'));
+            name = parsed.name; det = parsed.detail;
+        } catch (_) {}
+    }
+    if (!target.children) target.children = [];
+    target.children.push({
+        name: name || 'New Initiative',
+        type: 'initiative',
+        color: target.color || '#9b30ff',
+        detail: det || ''
+    });
+    refreshTreeFromData();
+    addBotMessage(`<p>Added <strong>Initiative</strong>. Remember to <strong>Save</strong> when you're done.</p>`);
     renderChatChips();
 };
 
@@ -3167,7 +3837,13 @@ function handleLocalChat(text) {
     if (/outcome.*output|output.*outcome|difference/i.test(lower)) { handleChipAction('outcome_vs_output'); return; }
     if (/best practice|tips|how.*write|framework/i.test(lower)) { handleChipAction('best_practices'); return; }
     if (/help|how.*use|guide|tutorial/i.test(lower)) { handleChipAction('help'); return; }
-    if (/rewrite|rephrase|improve|refine/i.test(lower) && currentData) { promptRewrite(); return; }
+    if (/rewrite|rephrase|improve|refine/i.test(lower) && currentData) {
+        if (/key result|kr\b|metric/i.test(lower)) { promptRewriteKR(); return; }
+        if (/initiative|experiment|solution/i.test(lower)) { promptRewriteInitiative(); return; }
+        promptRewrite(); return;
+    }
+    if (/add.*key result|add.*kr|suggest.*kr/i.test(lower) && currentData) { promptAddKRs(); return; }
+    if (/add.*initiative|add.*experiment|suggest.*initiative/i.test(lower) && currentData) { promptAddInitiative(); return; }
 
     const reply = demoRespond(text, lower);
     addBotMessage(reply);
@@ -3447,7 +4123,7 @@ function attachBoxZoom(targetSvg, zoom) {
             const gy2 = (y1 + bh - curT.y) / curT.k;
             const gw = gx2 - gx1, gh = gy2 - gy1;
 
-            const newScale = Math.min(svgW / gw, svgH / gh) * 0.9;
+            const newScale = Math.max(Math.min(svgW / gw, svgH / gh) * 0.9, 2);
             const gcx = (gx1 + gx2) / 2, gcy = (gy1 + gy2) / 2;
             const t = d3.zoomIdentity
                 .translate(svgW / 2 - gcx * newScale, svgH / 2 - gcy * newScale)
@@ -3460,8 +4136,27 @@ function attachBoxZoom(targetSvg, zoom) {
 
 function renderTree(data) {
     treeContainer = document.getElementById('tree-container');
+    if (!treeContainer) return;
     treeContainer.innerHTML = '';
 
+    const width = treeContainer.clientWidth;
+    const height = treeContainer.clientHeight;
+
+    if (!width || !height) {
+        treeContainer.innerHTML = '<div class="tree-empty-hint" style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.9rem">Canvas is sizing…</div>';
+        setTimeout(() => renderTree(data), 150);
+        return;
+    }
+
+    try {
+        _renderTreeCore(data);
+    } catch (err) {
+        console.error('renderTree error', err);
+        treeContainer.innerHTML = '<div class="tree-empty-hint" style="padding:2rem;text-align:center;color:var(--text-muted)"><p>Could not draw the tree.</p><p style="font-size:0.8rem;margin-top:0.5rem">If you opened this from a shared link, try opening <strong>okr-builder.html</strong> in your browser directly, or check the console for errors.</p><button class="btn btn-sm" style="margin-top:1rem" onclick="showGalleryView()">Open gallery</button></div>';
+    }
+}
+
+function _renderTreeCore(data) {
     const width = treeContainer.clientWidth;
     const height = treeContainer.clientHeight;
 
@@ -3474,7 +4169,7 @@ function renderTree(data) {
         .attr('rx', 6);
     g = svg.append('g');
 
-    zoomBehavior = d3.zoom().scaleExtent([0.05, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
+    zoomBehavior = d3.zoom().scaleExtent([2, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
         .filter(e => (!e.ctrlKey && !e.metaKey) || e.type === 'wheel')
         .on('zoom', (event) => g.attr('transform', event.transform));
     svg.call(zoomBehavior).on('dblclick.zoom', null);
@@ -3541,6 +4236,33 @@ function getStyle(d) {
     return { ...s, border: d.data.color || '#3d3f56' };
 }
 
+// Pan to show expanded content without changing zoom — keeps scale, pans right to reveal new children
+function panToExpandedNode(targetSvg, zoom, expandedNode, container, horizontal, duration = 350) {
+    const svgEl = targetSvg.node();
+    if (!svgEl) return;
+    const cur = d3.zoomTransform(svgEl);
+    const w = container.clientWidth, h = container.clientHeight;
+    const descendants = expandedNode.descendants();
+    if (descendants.length === 0) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    const pad = 60;
+    descendants.forEach(n => {
+        const nx = horizontal ? n.y : n.x;
+        const ny = horizontal ? n.x : n.y;
+        minX = Math.min(minX, nx - pad);
+        maxX = Math.max(maxX, nx + pad);
+        minY = Math.min(minY, ny - 25);
+        maxY = Math.max(maxY, ny + 25);
+    });
+    const centerCoord = horizontal ? (minY + maxY) / 2 : (minX + maxX) / 2;
+    const panAmount = horizontal ? 380 : 200;
+    const newTx = horizontal ? cur.x - panAmount : w / 2 - centerCoord * cur.k;
+    const newTy = horizontal ? h / 2 - centerCoord * cur.k : cur.y - panAmount;
+    const t = d3.zoomIdentity.translate(newTx, newTy).scale(cur.k);
+    targetSvg.interrupt();
+    targetSvg.call(zoom.transform, t);
+}
+
 function fitTreeToScreen(targetSvg, zoom, treeRoot, container, horizontal, duration = 600) {
     const allNodes = treeRoot.descendants();
     if (allNodes.length === 0) return;
@@ -3561,7 +4283,7 @@ function fitTreeToScreen(targetSvg, zoom, treeRoot, container, horizontal, durat
     });
     const w = container.clientWidth, h = container.clientHeight;
     const dx = maxX - minX || 1, dy = maxY - minY || 1;
-    const scale = Math.min(w / dx, h / dy, 1.5) * 0.9;
+    const scale = Math.max(Math.min(w / dx, h / dy, 1.5) * 0.9, 2);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     targetSvg.transition().duration(duration).call(zoom.transform,
         d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale));
@@ -3614,12 +4336,7 @@ function update(source) {
 
     const node = g.selectAll('.node-group').data(nodes, d => d.data.name + d.depth);
     const nodeEnter = node.enter().append('g').attr('class', 'node-group')
-        .attr('transform', isHorizontal ? `translate(${source.y0},${source.x0})` : `translate(${source.x0},${source.y0})`)
-        .on('click', (event, d) => { event.stopPropagation(); selectedNodeId = d.data.name + d.depth; if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } update(d); setTimeout(() => fitTreeToScreen(svg, zoomBehavior, root, treeContainer, isHorizontal), 550); })
-        .on('dblclick', (event, d) => { event.stopPropagation(); zoomToNode(d); })
-        .on('mouseenter', (event, d) => { showTooltip(event, d); showOkraNodeHint(d); })
-        .on('mouseleave', () => { hideTooltip(); hideOkraNodeHint(); })
-        .on('contextmenu', (event, d) => openEditModal(event, d));
+        .attr('transform', isHorizontal ? `translate(${source.y0},${source.x0})` : `translate(${source.x0},${source.y0})`);
 
     nodeEnter.append('rect').attr('class', 'node-bg')
         .attr('width', NODE_W).attr('height', NODE_H)
@@ -3660,6 +4377,11 @@ function update(source) {
         })
         .text(d => TYPE_LABELS[d.data.type] || '');
 
+    clipped.filter(d => d.data.type === 'objective').append('rect').attr('class', 'node-label-hitarea')
+        .attr('x', -NODE_W / 2 + 12).attr('y', -NODE_H / 2 + 4)
+        .attr('width', NODE_W - 24).attr('height', NODE_H - 8)
+        .attr('fill', 'transparent').attr('cursor', 'pointer')
+        .style('pointer-events', 'all');
     clipped.append('text').attr('class', 'node-label').attr('text-anchor', 'middle')
         .attr('y', d => d.data.companyOkr ? 1 : 3)
         .attr('dominant-baseline', 'central')
@@ -3667,6 +4389,7 @@ function update(source) {
         .attr('font-weight', d => d.data.type === 'company' || d.data.type === 'department' || d.data.type === 'initiative' ? '600' : d.data.type === 'subdepartment' || d.data.type === 'objective' ? '500' : '400')
         .attr('font-style', d => d.data.type === 'kr' ? 'italic' : 'normal')
         .attr('fill', d => d.data.type === 'kr' ? '#8ecfd6' : '#e8e8f0')
+        .attr('cursor', d => d.data.type === 'objective' ? 'pointer' : null)
         .text(d => truncate(d.data.name, Math.floor((NODE_W - 40) / 7)));
 
     clipped.filter(d => d.data.companyOkr).append('text').attr('class', 'node-company-okr')
@@ -3676,15 +4399,22 @@ function update(source) {
         .attr('fill', '#ffffffaa')
         .text(d => d.data.companyOkr);
 
-    clipped.filter(d => d.data.sharedWith && d.data.sharedWith.length > 0).append('text').attr('class', 'node-shared-badge')
+    clipped.filter(d => (d.data.sharedWith && d.data.sharedWith.length > 0) || (d.data.similarSharedWith && d.data.similarSharedWith.length > 0)).append('text').attr('class', 'node-shared-badge')
         .attr('text-anchor', 'end').attr('x', NODE_W / 2 - 10).attr('y', -NODE_H / 2 + 10)
         .attr('font-size', '7px').attr('font-weight', '600').attr('letter-spacing', '0.3px')
-        .attr('fill', '#22d3ee')
-        .text(d => '\u{1F517} ' + d.data.sharedWith.length + ' shared');
+        .attr('cursor', 'pointer')
+        .attr('fill', d => d.data.sharedWith && d.data.sharedWith.length > 0 ? '#22d3ee' : '#a78bfa')
+        .text(d => {
+            const sw = d.data.sharedWith?.length || 0;
+            const sim = d.data.similarSharedWith?.length || 0;
+            if (sw) return '\u{1F517} ' + sw + ' shared';
+            if (sim) return '\u{1F517} ' + sim + ' similar';
+            return '\u{1F517} shared';
+        });
 
     clipped.filter(d => d._children || d.children).append('text').attr('class', 'expand-indicator')
         .attr('text-anchor', 'end').attr('x', NODE_W / 2 - 10).attr('dominant-baseline', 'central')
-        .attr('font-size', '11px')
+        .attr('font-size', '11px').attr('cursor', 'pointer')
         .text(d => d._children ? '+' : '\u2212');
 
     nodeEnter.append('text').attr('class', 'node-edit-btn')
@@ -3695,6 +4425,43 @@ function update(source) {
         .on('click', (event, d) => { event.stopPropagation(); openEditModal(event, d, false); });
 
     const nodeUpdate = nodeEnter.merge(node);
+
+    function doExpandCollapse(d) {
+        selectedNodeId = d.data.name + d.depth;
+        const wasExpanding = !!d._children;
+        if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; }
+        update(d);
+        setTimeout(() => {
+            if (wasExpanding) {
+                lastExpandTime = Date.now();
+                panToExpandedNode(svg, zoomBehavior, d, treeContainer, isHorizontal, 350);
+            }
+        }, 550);
+    }
+
+    nodeUpdate.selectAll('.node-label, .node-label-hitarea').on('click', (event, d) => {
+        if (d.data.type === 'objective') {
+            event.stopPropagation();
+            openSharedDeptsPanel(d);
+        }
+    });
+    nodeUpdate.selectAll('.expand-indicator').on('click', (event, d) => {
+        event.stopPropagation();
+        doExpandCollapse(d);
+    });
+    nodeUpdate.selectAll('.node-shared-badge').on('click', (event, d) => {
+        event.stopPropagation();
+        openSharedDeptsPanel(d);
+    });
+
+    nodeUpdate.on('click', (event, d) => {
+            event.stopPropagation();
+            doExpandCollapse(d);
+        })
+        .on('dblclick', (event, d) => { event.stopPropagation(); zoomToNode(d); })
+        .on('mouseenter', (event, d) => { showTooltip(event, d); showOkraNodeHint(d); })
+        .on('mouseleave', () => { hideTooltip(); hideOkraNodeHint(); })
+        .on('contextmenu', (event, d) => openEditModal(event, d));
     nodeUpdate.transition().duration(500).attr('transform', d => isHorizontal ? `translate(${d.y},${d.x})` : `translate(${d.x},${d.y})`);
     nodeUpdate.select('.expand-indicator').text(d => d._children ? '+' : (d.children ? '\u2212' : ''));
 
@@ -3725,7 +4492,7 @@ function zoomToNode(d) {
         });
         const bboxW = maxX - minX || 1, bboxH = maxY - minY || 1;
         const w = treeContainer.clientWidth, h = treeContainer.clientHeight;
-        const scale = Math.min(w / bboxW, h / bboxH) * 0.88;
+        const scale = Math.max(Math.min(w / bboxW, h / bboxH) * 0.88, 2);
         const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
         svg.transition().duration(750).call(zoomBehavior.transform,
             d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale));
@@ -3772,7 +4539,17 @@ function showTooltip(event, d) {
     }
     if (d.data.timeline) html += `<div class="tooltip-meta">Timeline: ${d.data.timeline}</div>`;
     if (d.data.sharedWith && d.data.sharedWith.length > 0) {
-        html += `<div class="tooltip-meta" style="color:#22d3ee">\u{1F517} Also in: ${d.data.sharedWith.join(', ')}</div>`;
+        const isObjOrKr = d.data.type === 'objective' || d.data.type === 'kr';
+        html += `<div class="tooltip-meta" style="color:#22d3ee;margin-top:0.4rem"><strong>\u{1F517} ${isObjOrKr ? 'Shared with sub-departments:' : 'Also in:'}</strong></div>`;
+        html += `<ul style="margin:0.2rem 0 0 1rem;padding:0;color:#22d3ee;font-size:0.7rem">`;
+        d.data.sharedWith.forEach(s => { html += `<li style="margin:0.1rem 0">${escapeHtml(s)}</li>`; });
+        html += `</ul>`;
+    }
+    if (d.data.similarSharedWith && d.data.similarSharedWith.length > 0) {
+        html += `<div class="tooltip-meta" style="color:#a78bfa;margin-top:0.4rem"><strong>\u{1F517} Similar in sub-departments:</strong></div>`;
+        html += `<ul style="margin:0.2rem 0 0 1rem;padding:0;color:#a78bfa;font-size:0.7rem">`;
+        d.data.similarSharedWith.forEach(s => { html += `<li style="margin:0.1rem 0">${escapeHtml(s.dept)} <span style="opacity:0.8">(${escapeHtml(s.name.length > 35 ? s.name.substring(0,32)+'…' : s.name)})</span></li>`; });
+        html += `</ul>`;
     }
     if (d.data.sharedDepts && d.data.sharedDepts.length > 0) {
         html += `<div class="tooltip-meta" style="color:#22d3ee;margin-top:0.3rem"><strong>\u{1F517} Shares OKRs with:</strong></div>`;
@@ -3816,8 +4593,38 @@ window.toggleOrientation = function() {
     setTimeout(() => fitTreeToScreen(svg, zoomBehavior, root, treeContainer, isHorizontal), 550);
 };
 
+// Generate a solution/experiment-focused initiative from KR + objective context
+// Initiatives must show: what (solution/experiment), which KR, why, how success is evaluated
+function generateInitiativeForKR(kr, parentObjective, strategicObj) {
+    const krName = kr.name || '';
+    const objName = (parentObjective && parentObjective.name) || '';
+    const area = objName.toLowerCase().replace(/^(increase|reduce|improve|enable|ensure|maintain)\s+/i, '').replace(/\s+(from|to|and)\s+.*$/i, '').substring(0, 40).trim() || 'this area';
+    const metricHint = krName.toLowerCase();
+    let name, detail;
+    if (/\b(rate|completion|adoption|click-through|uplift)\b/i.test(metricHint)) {
+        name = `Run A/B test to measure impact on ${krName.substring(0, 45)}`;
+        detail = `Validates approach for ${area}. Success evaluated by change in metric.`;
+    } else if (/\b(time|days|reduce.*ticket|resolution|resolve)\b/i.test(metricHint)) {
+        name = `Run experiment to validate approach for ${krName.substring(0, 45)}`;
+        detail = `Tests hypothesis for ${area}. Measure before/after to evaluate success.`;
+    } else if (/\b(interview|user research|friction)\b/i.test(metricHint) || /\b(ticket|support)\b/i.test(metricHint)) {
+        name = `Interview users to validate friction points in ${area}`;
+        detail = `Identifies root causes. Success = actionable insights that inform changes to move this KR.`;
+    } else if (/\b(deprecat|consolidat|legacy|savings)\b/i.test(metricHint)) {
+        name = `Run phased rollout to measure impact on ${krName.substring(0, 45)}`;
+        detail = `Validates consolidation approach. Success evaluated by metric change and no regression.`;
+    } else if (/\b(compliance|audit|governance|preference)\b/i.test(metricHint)) {
+        name = `Run compliance validation and measure impact on ${krName.substring(0, 45)}`;
+        detail = `Validates process changes. Success = metric improvement with full audit trail.`;
+    } else {
+        name = `Run A/B test to measure impact on ${krName.substring(0, 45)}`;
+        detail = `Validates approach for ${area}. Success evaluated by change in this KR.`;
+    }
+    return { name, detail };
+}
+
 // Transform old structure (Initiative → Objective → KR) to new (Objective → KR → Initiative)
-// Only at root level when children are initiatives
+// Generates solution/experiment-focused initiatives instead of copying outcome-focused strategic obj names
 function transformToNewStructure(node) {
     if (!node) return node;
     const children = node.children || [];
@@ -3832,11 +4639,12 @@ function transformToNewStructure(node) {
                 const newObj = { ...obj, children: [] };
                 (obj.children || []).forEach(kr => {
                     if (kr.type !== 'kr') return;
+                    const { name, detail } = generateInitiativeForKR(kr, obj, init);
                     const initiativeChild = {
-                        name: init.name,
+                        name,
                         type: 'initiative',
                         color: kr.color || init.color,
-                        detail: (init.detail || '') + (kr.detail ? ' — Moves this KR: ' + kr.detail : '')
+                        detail: detail + (kr.detail ? ' Moves this KR: ' + kr.detail : '')
                     };
                     newObj.children.push({ ...kr, children: [initiativeChild] });
                 });
@@ -3846,7 +4654,23 @@ function transformToNewStructure(node) {
         return { ...node, children: objectives };
     }
     const newChildren = (node.children || []).map(c => transformToNewStructure(c));
-    return { ...node, children: newChildren };
+    let result = { ...node, children: newChildren };
+    // Migrate initiatives that look like outcomes (from old saved trees) — only at root with objectives
+    if (result.children && (node.type === 'company' || !node.type) && result.children.some(c => c.type === 'objective')) {
+        result.children = result.children.map(obj => {
+            if (obj.type !== 'objective') return obj;
+            return { ...obj, children: (obj.children || []).map(kr => {
+                if (kr.type !== 'kr' || !kr.children) return kr;
+                const init = kr.children[0];
+                if (init && init.type === 'initiative' && /\b(accelerate|strengthen|improve|reduce operational|improve internal|improve organizational)\b/i.test(init.name)) {
+                    const { name, detail } = generateInitiativeForKR(kr, obj, null);
+                    return { ...kr, children: [{ ...init, name, detail: detail + (kr.detail ? ' Moves this KR: ' + kr.detail : '') }] };
+                }
+                return kr;
+            })};
+        });
+    }
+    return result;
 }
 
 // Merge pre-stored + localStorage trees (pre-stored first, deduped by dept)
@@ -3888,6 +4712,56 @@ window.saveCurrentTree = function() {
     renderGallery();
     alert(existingIdx >= 0 ? 'Tree updated!' : 'Tree saved!');
 };
+
+// ─── SHARED DEPARTMENTS PANEL ───
+function openSharedDeptsPanel(d) {
+    if (!d || !d.data) return;
+    const sw = d.data.sharedWith || [];
+    const sim = d.data.similarSharedWith || [];
+    const nameEl = document.getElementById('sharedDeptsObjectiveName');
+    const listEl = document.getElementById('sharedDeptsList');
+    if (!nameEl || !listEl) return;
+    nameEl.textContent = d.data.name || 'Objective';
+    listEl.innerHTML = '';
+    if (sw.length > 0) {
+        sw.forEach(dept => {
+            const li = document.createElement('li');
+            li.textContent = dept;
+            listEl.appendChild(li);
+        });
+    } else if (sim.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'shared-depts-empty';
+        li.textContent = 'No other departments share this objective yet.';
+        li.style.borderLeftColor = 'var(--border)';
+        li.style.background = 'var(--bg)';
+        listEl.appendChild(li);
+    }
+    const similarBlock = document.getElementById('sharedDeptsSimilar');
+    const similarList = document.getElementById('sharedDeptsSimilarList');
+    if (similarBlock && similarList) {
+        if (sim.length > 0) {
+            similarBlock.style.display = 'block';
+            similarList.innerHTML = '';
+            sim.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = typeof item === 'string' ? item : (item.dept || item.name || '');
+                li.style.borderLeftColor = '#a78bfa';
+                li.style.background = 'rgba(167,139,250,0.08)';
+                similarList.appendChild(li);
+            });
+        } else {
+            similarBlock.style.display = 'none';
+        }
+    }
+    const overlay = document.getElementById('sharedDeptsOverlay');
+    if (overlay) overlay.classList.add('open');
+}
+function closeSharedDeptsPanel() {
+    const el = document.getElementById('sharedDeptsOverlay');
+    if (el) el.classList.remove('open');
+}
+window.closeSharedDeptsPanel = closeSharedDeptsPanel;
 
 // ─── EDIT NODE MODAL ───
 let editingNode = null;
@@ -4350,7 +5224,17 @@ window.showCompanyView = function(fromTab) {
 };
 
 function buildCompanyData() {
-    const trees = getAllTrees();
+    let trees = getAllTrees();
+    if (trees.length === 0 && Object.keys(STORED_TREES).length > 0) {
+        trees = Object.entries(STORED_TREES).map(([dept, data]) => ({
+            id: 'stored_' + dept.replace(/\s+/g, '_'),
+            name: data.name,
+            dept: dept,
+            date: 'Pre-stored',
+            data: transformToNewStructure(data),
+            isStored: true
+        }));
+    }
 
     const deptMap = {};
     Object.keys(SUB_DEPARTMENTS).forEach(dept => {
@@ -4494,6 +5378,7 @@ function buildCompanyData() {
 
 function renderCompanyTree() {
     companyContainer = document.getElementById('company-tree-container');
+    if (!companyContainer) return;
     companyContainer.innerHTML = '';
     const companyData = buildCompanyData();
 
@@ -4511,10 +5396,28 @@ function renderCompanyTree() {
     const width = companyContainer.clientWidth;
     const height = companyContainer.clientHeight;
 
+    if (!width || !height) {
+        companyContainer.innerHTML = '<div class="company-empty-state" style="font-size:0.9rem;color:var(--text-muted)">Loading…</div>';
+        setTimeout(renderCompanyTree, 150);
+        return;
+    }
+
+    try {
+        _renderCompanyTreeCore(companyData);
+    } catch (err) {
+        console.error('renderCompanyTree error', err);
+        companyContainer.innerHTML = '<div class="company-empty-state"><div>Could not draw the company tree.</div><p style="font-size:0.85rem;margin-top:0.5rem;color:var(--text-muted)">Try opening the app in your browser directly or check the console.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="showGalleryView()">Open gallery</button></div>';
+    }
+}
+
+function _renderCompanyTreeCore(companyData) {
+    const width = companyContainer.clientWidth;
+    const height = companyContainer.clientHeight;
+
     companySvg = d3.select(companyContainer).append('svg').attr('class', 'tree-svg').attr('width', width).attr('height', height);
     companyG = companySvg.append('g');
 
-    companyZoom = d3.zoom().scaleExtent([0.05, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
+    companyZoom = d3.zoom().scaleExtent([2, 5]).wheelDelta(e => -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002))
         .filter(e => (!e.ctrlKey && !e.metaKey) || e.type === 'wheel')
         .on('zoom', (e) => companyG.attr('transform', e.transform));
     companySvg.call(companyZoom).on('dblclick.zoom', null);
@@ -4596,10 +5499,16 @@ function updateCompanyTree(source) {
                 toggleNodeCard(d);
                 return;
             }
+            const wasExpanding = !!d._children;
             if (d.children) { d._children = d.children; d.children = null; }
             else if (d._children) { d.children = d._children; d._children = null; }
             updateCompanyTree(d);
-            setTimeout(() => fitCompanyWindow(), 550);
+            setTimeout(() => {
+                if (wasExpanding) {
+                    lastExpandTime = Date.now();
+                    panToExpandedNode(companySvg, companyZoom, d, companyContainer, companyHorizontal, 0);
+                } else { /* collapse: keep current zoom and pan */ }
+            }, 550);
         })
         .on('mouseover', (e, d) => { showTooltip(e, d); showOkraNodeHint(d); })
         .on('mouseout', () => { hideTooltip(); hideOkraNodeHint(); })
@@ -5275,7 +6184,7 @@ function fitCompanyWindow() {
 
     const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
     const bw = maxX - minX || 1, bh = maxY - minY || 1;
-    const scale = Math.min(w / bw, h / bh, 1.5) * 0.88;
+    const scale = Math.max(Math.min(w / bw, h / bh, 1.5) * 0.88, 2);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     companySvg.transition().duration(750).call(companyZoom.transform,
         d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale));
@@ -5330,11 +6239,14 @@ window.addEventListener('mouseup', () => {
 window.addEventListener('resize', () => {
     if (svg && treeContainer) {
         svg.attr('width', treeContainer.clientWidth).attr('height', treeContainer.clientHeight);
-        if (root) setTimeout(() => fitTreeToScreen(svg, zoomBehavior, root, treeContainer, isHorizontal), 200);
+        if (root) {
+            const skipFit = (Date.now() - lastExpandTime) < 2000;
+            if (!skipFit) setTimeout(() => fitTreeToScreen(svg, zoomBehavior, root, treeContainer, isHorizontal), 200);
+        }
     }
     if (companySvg && companyContainer) {
         companySvg.attr('width', companyContainer.clientWidth).attr('height', companyContainer.clientHeight);
-        if (companyRoot) setTimeout(() => fitCompanyWindow(), 200);
+        if (companyRoot && (Date.now() - lastExpandTime) >= 2000) setTimeout(() => fitCompanyWindow(), 200);
     }
 });
 </script>

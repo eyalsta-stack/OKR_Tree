@@ -60,6 +60,7 @@ A self-service tool for viewing and generating OKR trees. Pre-stored trees load 
 ### Key Features (okr-builder.html)
 
 - **Dual mode:** Pre-stored data loads instantly; no-data departments get upload + AI generation
+- **OKRA (chat assistant):** Can update nodes per guide structure — rewrite objectives/KRs/initiatives, add KRs, add initiatives; uses `refreshTreeFromData()` when adding nodes
 - **OKR Guide panel:** In-app reference of the Continuous Discovery framework rules (toggle from header)
 - **Visualization:** Interactive D3.js tree with expand/collapse, zoom, pan, tooltips
 - **Fit to screen:** Auto-scales tree to fit viewport on load and orientation toggle

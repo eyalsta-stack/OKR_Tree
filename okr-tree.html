@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Communications OKR Tree 2026-2028</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            position: relative;
+        }
+        .header-left h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-left p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 0.15rem;
+        }
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .btn {
+            padding: 0.45rem 0.9rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .btn:hover { background: var(--surface-hover); border-color: #60a5fa; }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.6rem 1.5rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            min-height: 38px;
+            z-index: 10;
+            position: relative;
+        }
+        .breadcrumb-item { color: var(--text-muted); cursor: pointer; transition: color 0.15s; }
+        .breadcrumb-item:hover { color: #60a5fa; }
+        .breadcrumb-sep { color: #475569; }
+        .breadcrumb-item.current { color: var(--text); cursor: default; font-weight: 600; }
+
+        .hint {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            z-index: 20;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+
+        #tree-container { width: 100%; height: calc(100vh - 90px); position: relative; }
+        svg { width: 100%; height: 100%; }
+        .node-group { cursor: pointer; }
+        .node-group:hover .node-bg { filter: brightness(1.25); }
+        .node-bg { rx: 8; ry: 8; transition: filter 0.15s; }
+        .node-label { font-family: 'Segoe UI', system-ui, sans-serif; fill: #e2e8f0; pointer-events: none; }
+        .node-sublabel { font-family: 'Segoe UI', system-ui, sans-serif; fill: #94a3b8; font-size: 10px; pointer-events: none; }
+        .link { fill: none; stroke: #334155; stroke-width: 1.5; }
+        .expand-indicator { fill: #94a3b8; font-size: 12px; font-weight: 700; font-family: 'Segoe UI', system-ui, sans-serif; pointer-events: none; }
+
+        .legend {
+            position: fixed;
+            bottom: 3.5rem;
+            right: 1rem;
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.7rem;
+            z-index: 20;
+        }
+        .legend-title { font-weight: 600; margin-bottom: 0.4rem; font-size: 0.75rem; }
+        .legend-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0; color: var(--text-muted); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(15, 23, 42, 0.97);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            max-width: 380px;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            line-height: 1.5;
+            color: var(--text);
+        }
+        .tooltip.show { opacity: 1; }
+        .tooltip-title { font-weight: 600; margin-bottom: 0.25rem; }
+        .tooltip-type {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tooltip-meta { color: var(--text-muted); font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <h1>Communications OKR Tree</h1>
+        <p>Outcome-Based View | 2026-2028 | Double-click to zoom | Click to expand/collapse</p>
+    </div>
+    <div class="controls">
+        <button class="btn" onclick="expandAll()">Expand All</button>
+        <button class="btn" onclick="collapseAll()">Collapse All</button>
+        <button class="btn" onclick="resetView()">Reset View</button>
+        <button class="btn" id="toggleLayout" onclick="toggleOrientation()">Vertical</button>
+    </div>
+</div>
+
+<div class="breadcrumb" id="breadcrumb">
+    <span class="breadcrumb-item current">Communications OKR Tree</span>
+</div>
+
+<div id="tree-container"></div>
+
+<div class="hint" id="hint">Double-click a node to zoom in &bull; Single click to expand/collapse &bull; Scroll to zoom &bull; Drag to pan</div>
+
+<div class="legend">
+    <div class="legend-title">Hierarchy</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div>Vision</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#8b5cf6"></div>Initiative</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#f59e0b"></div>Objective</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#475569"></div>Key Result</div>
+    <div class="legend-title" style="margin-top:0.6rem">Initiatives</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div>Program Outcomes</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#f97316"></div>CEP & Recreation</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#06b6d4"></div>Channels</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#10b981"></div>Preference Center</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#a855f7"></div>Governance</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#eab308"></div>BackOffice Ledger</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#ec4899"></div>AI Integration</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#ef4444"></div>Org Structure</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = {
+    name: "Communications Strategy 2026-2028",
+    type: "vision",
+    color: "#3b82f6",
+    detail: "Make communications an intelligent growth engine - predictive by design, governed by default, and explainable end to end.",
+    children: [
+        {
+            name: "Program Outcomes",
+            type: "initiative",
+            color: "#22c55e",
+            detail: "Strategic outcomes tied to company OKRs: Grow Upmarket + Brilliant at the Basics",
+            children: [
+                {
+                    name: "Accelerate Lifecycle Growth",
+                    type: "objective",
+                    color: "#22c55e",
+                    detail: "Drive measurable improvement in onboarding, activation, adoption, reactivation, and upsell/cross-sell through orchestrated, personalized communication journeys.",
+                    children: [
+                        { name: "+20-30% uplift across lifecycle journeys", type: "kr", timeline: "2028", color: "#22c55e", detail: "Improvement in onboarding, activation, adoption, reactivation, and upsell/cross-sell journey performance measured end-to-end." },
+                        { name: "+3% CTR uplift on targeted channels", type: "kr", timeline: "2026", color: "#22c55e", detail: "Click-through rate increase on channels receiving CEP-governed targeting, personalization, and send-time optimization." },
+                        { name: "+15-20% sustained action completion increase", type: "kr", timeline: "2028", color: "#22c55e", detail: "More customers completing key actions (KYC, first payout, bank linking) after receiving guided, contextual communications." }
+                    ]
+                },
+                {
+                    name: "Strengthen Customer Trust",
+                    type: "objective",
+                    color: "#22c55e",
+                    detail: "Prevent 'what happened / what do I do now?' moments through consistent, explainable, preference-aware communication that protects CX and reduces confusion.",
+                    children: [
+                        { name: "99.9% preference & compliance enforcement", type: "kr", timeline: "2026", color: "#22c55e", detail: "Nearly all sends respect user preferences, quiet hours, frequency caps, and regulatory requirements validated at send-time." },
+                        { name: "10-15% fewer how-to / status tickets", type: "kr", timeline: "2028", color: "#22c55e", detail: "Fewer support tickets from customers asking what happened or what to do next, thanks to clearer, more timely communication." },
+                        { name: "0 critical compliance breaches", type: "kr", timeline: "2028", color: "#22c55e", detail: "No regulatory or compliance violations caused by communication execution failures across any channel or market." }
+                    ]
+                },
+                {
+                    name: "Reduce Cost & Overhead",
+                    type: "objective",
+                    color: "#22c55e",
+                    detail: "Lower operational cost through template reuse, legacy deprecation, self-serve creation, and reduced investigation overhead.",
+                    children: [
+                        { name: "75% less eng effort per new communication", type: "kr", timeline: "2028", color: "#22c55e", detail: "New communications built through CEP templates and self-serve tools instead of requiring dedicated engineering sprints." },
+                        { name: "Net savings + 1 eng/yr cost avoided", type: "kr", timeline: "2026-27", color: "#22c55e", detail: "Acoustic contract non-renewal saves $80K/yr; CNH deprecation before .NET10 deadline avoids one engineer of maintenance cost." },
+                        { name: "40% template reduction; 50% faster TTM", type: "kr", timeline: "2028", color: "#22c55e", detail: "Fewer redundant templates through standardized families; new communications ship in half the time via reusable components." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "CEP & Recreation",
+            type: "initiative",
+            color: "#f97316",
+            detail: "Replace 70+ fragmented senders with centralized, event-driven CEP orchestration (Braze ROW + BessChannel China)",
+            children: [
+                {
+                    name: "Centralized event-driven orchestration",
+                    type: "objective",
+                    color: "#f97316",
+                    detail: "Move all non-security communications from 70+ legacy service-level triggers into a single, vendor-agnostic orchestration engine with event contracts and journey blueprints.",
+                    children: [
+                        { name: "90% CNH clean rate (non-partnership, non-security)", type: "kr", timeline: "2026", color: "#f97316", detail: "90% of legacy CNH communications deprecated after their journeys are successfully recreated in the CEP." },
+                        { name: "70% recreation coverage (journeys in CEP)", type: "kr", timeline: "2026", color: "#f97316", detail: "70% of eligible communication journeys rebuilt and live in Braze, following the standardized Journey Blueprint." },
+                        { name: "100% eligible comms via CEP", type: "kr", timeline: "2028", color: "#f97316", detail: "Every non-security, non-partnership communication routes through the centralized orchestration engine by end of 2028." }
+                    ]
+                },
+                {
+                    name: "Preference & compliance enforcement at send-time",
+                    type: "objective",
+                    color: "#f97316",
+                    detail: "Ensure every message passes consent, preference, quiet-hour, and frequency checks before delivery - the structural prerequisite for a reliable Preference Center.",
+                    children: [
+                        { name: "99.9% preference & compliance enforcement", type: "kr", timeline: "2026", color: "#f97316", detail: "CEP validates consent, preferences, quiet hours, and frequency caps in real-time before every single send." },
+                        { name: "85% role/entity readiness coverage", type: "kr", timeline: "2028", color: "#f97316", detail: "85% of channels can target by user role (owner, manager, contributor) and entity (business, account, group)." },
+                        { name: "6 out of 6 defined channels available via CEP", type: "kr", timeline: "2027", color: "#f97316", detail: "All six planned channels (Email, Push, In-app, SMS, and two regional messengers) connected and governed through CEP." }
+                    ]
+                },
+                {
+                    name: "Self-serve experimentation at scale",
+                    type: "objective",
+                    color: "#f97316",
+                    detail: "Enable Product, LCM, and domain owners to create, test, and iterate communications without engineering dependency - within governed guardrails.",
+                    children: [
+                        { name: "70% of tests self-served (A/B + holdouts)", type: "kr", timeline: "2027", color: "#f97316", detail: "Product and LCM teams run most A/B tests and holdout experiments directly in the CEP without engineering support." },
+                        { name: "80% material changes with A/B evidence", type: "kr", timeline: "2026", color: "#f97316", detail: "Most communication changes are backed by experiment data (A/B or holdout) before being scaled to full audience." },
+                        { name: "75% reduction in eng effort per new comm", type: "kr", timeline: "2028", color: "#f97316", detail: "Template families, reusable components, and CEP self-serve tools cut engineering time per new communication by 75%." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Channels",
+            type: "initiative",
+            color: "#06b6d4",
+            detail: "Build a governed, instrumented, reusable channel ecosystem across in-app surfaces and external messengers",
+            children: [
+                {
+                    name: "Measurable channel uplift",
+                    type: "objective",
+                    color: "#06b6d4",
+                    detail: "Prove that governed, targeted channels drive better customer engagement and action completion than the current fragmented approach.",
+                    children: [
+                        { name: "+3% CTR baseline uplift on targeted channels", type: "kr", timeline: "2026", color: "#06b6d4", detail: "Click-through rate improvement from standardized templates, governed routing, and initial send-time optimization." },
+                        { name: "+10% action completion on promo journeys", type: "kr", timeline: "2026", color: "#06b6d4", detail: "More customers completing target actions in acquisition, upsell, and cross-sell flows driven by CEP-orchestrated campaigns." },
+                        { name: "+15-20% action completion with targeting", type: "kr", timeline: "2027", color: "#06b6d4", detail: "Further uplift from role/entity-aware targeting, CDP-powered segmentation, and cross-channel sequencing in 2027." }
+                    ]
+                },
+                {
+                    name: "Full instrumentation & CEP integration",
+                    type: "objective",
+                    color: "#06b6d4",
+                    detail: "Connect every communication surface to CEP and ensure end-to-end measurement so every message is traceable and its impact provable.",
+                    children: [
+                        { name: "100% surface instrumentation coverage", type: "kr", timeline: "2026-27", color: "#06b6d4", detail: "Every in-app and external surface emits impression, click, action completion, eligibility reason, and role/entity context." },
+                        { name: "90% CEP-integrated surface ratio", type: "kr", timeline: "2027", color: "#06b6d4", detail: "90% of governed communication surfaces connected to Braze for eligibility, suppression, targeting, and A/B testing." },
+                        { name: "80% channel placements within 3-day SLA", type: "kr", timeline: "2026", color: "#06b6d4", detail: "New channel placements and templates delivered within three business days of request, measured by the service desk." }
+                    ]
+                },
+                {
+                    name: "Eliminate channel collisions & noise",
+                    type: "objective",
+                    color: "#06b6d4",
+                    detail: "Stop customers from seeing conflicting, duplicate, or poorly timed messages by enforcing a platform-wide routing hierarchy and CEP suppression rules.",
+                    children: [
+                        { name: "Collision rate down 50%", type: "kr", timeline: "2026", color: "#06b6d4", detail: "Half as many conflicting or overlapping messages appearing on the same surface or across channels simultaneously." },
+                        { name: "Collision rate down 80%", type: "kr", timeline: "2028", color: "#06b6d4", detail: "80% reduction in message conflicts through enforced routing hierarchy (Critical > Blocking > Nudge > Discovery) and suppression." },
+                        { name: "Reduction in duplicate/conflicting sends", type: "kr", timeline: "2026", color: "#06b6d4", detail: "Fewer customers receiving the same or contradictory messages from different legacy senders through network-based deduplication." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Preference Center",
+            type: "initiative",
+            color: "#10b981",
+            detail: "Give customers transparent, enforceable control over how, when, and through which channels they are contacted",
+            children: [
+                {
+                    name: "Reliable preference enforcement",
+                    type: "objective",
+                    color: "#10b981",
+                    detail: "Make preference honoring technically reliable - every send checks consent, quiet hours, category rules, and channel selection before delivery.",
+                    children: [
+                        { name: "99.9% enforcement accuracy at send-time", type: "kr", timeline: "2026", color: "#10b981", detail: "Preferences, quiet hours, category rules, and channel selection honored on virtually every send via CEP preflight checks." },
+                        { name: "YoY decline in fatigue-based suppressions", type: "kr", timeline: "2026-27", color: "#10b981", detail: "Fewer messages blocked by fatigue rules as preferences are honored more accurately upstream, reducing unnecessary sends." },
+                        { name: "Audit-grade consent capture with full lineage", type: "kr", timeline: "2026", color: "#10b981", detail: "Every consent opt-in/out record includes full provenance and lineage, ready for regulatory audits and compliance checks." }
+                    ]
+                },
+                {
+                    name: "Customers adjust, not unsubscribe",
+                    type: "objective",
+                    color: "#10b981",
+                    detail: "Give customers granular controls (category, frequency, channel, digest) so they reduce noise without losing all communication.",
+                    children: [
+                        { name: "Opt-down vs unsubscribe ratio 60% to 70%", type: "kr", timeline: "2026-27", color: "#10b981", detail: "Most users who reduce communication choose to adjust settings (category, frequency) rather than fully unsubscribing." },
+                        { name: "Digest adoption 25% to 40%", type: "kr", timeline: "2026-27", color: "#10b981", detail: "25-40% of eligible users/accounts opt into consolidated digest summaries instead of receiving individual messages." },
+                        { name: "Reduction in overall unsubscribe rates", type: "kr", timeline: "2026-27", color: "#10b981", detail: "Fewer total unsubscribes as finer preference controls give customers meaningful alternatives to opting out entirely." }
+                    ]
+                },
+                {
+                    name: "Role & entity-aware preferences",
+                    type: "objective",
+                    color: "#10b981",
+                    detail: "Let preferences reflect who the user is (role) and what they manage (entity) - owners set defaults, contributors customize within those bounds.",
+                    children: [
+                        { name: "Role/entity-aware preferences live", type: "kr", timeline: "2027", color: "#10b981", detail: "Owners, managers, and contributors each see and control preference settings relevant to their role and managed entities." },
+                        { name: "Multi-category digest options live", type: "kr", timeline: "2027", color: "#10b981", detail: "Users can subscribe to separate digests for payments, account activity, product updates, and promotions independently." },
+                        { name: "Measurable lift in task completion for role categories", type: "kr", timeline: "2027", color: "#10b981", detail: "Measured improvement in onboarding, payment, and document workflow completion when communications are tailored to user role." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Governance & Compliance",
+            type: "initiative",
+            color: "#a855f7",
+            detail: "Ensure every communication is consistent, compliant, measurable, and intentionally designed through policy-as-code",
+            children: [
+                {
+                    name: "Policy-as-code at build and send",
+                    type: "objective",
+                    color: "#a855f7",
+                    detail: "Turn governance from optional guidelines into system-enforced constraints - if a rule is violated, the CEP blocks the message before publish or send.",
+                    children: [
+                        { name: "Policy pass 98% at build / 99.5% at send", type: "kr", timeline: "2026", color: "#a855f7", detail: "98% of communications pass all governance checks (naming, metadata, consent, compliance packs) during creation; 99.5% pass at send-time." },
+                        { name: "100% metadata completeness on live comms", type: "kr", timeline: "2026", color: "#a855f7", detail: "Every live communication has full metadata: category, domain, lifecycle stage, priority, severity, and regulatory flags." },
+                        { name: "0 governance violations at build/send", type: "kr", timeline: "2028", color: "#a855f7", detail: "No communication bypasses consent, preference, naming, metadata, or compliance rules - full policy-as-code enforcement." }
+                    ]
+                },
+                {
+                    name: "Standardized, reusable creation",
+                    type: "objective",
+                    color: "#a855f7",
+                    detail: "Replace one-off, ad-hoc communication creation with governed template families, compliance packs, and reusable content components.",
+                    children: [
+                        { name: "95% to 100% template & compliance coverage", type: "kr", timeline: "2026-27", color: "#a855f7", detail: "Nearly all journeys use approved template families and pre-approved compliance language packs, reducing defects and rework." },
+                        { name: "Time-to-publish from 15d to 10d", type: "kr", timeline: "2026-27", color: "#a855f7", detail: "Median time from intake request to certified go-live reduced from 15 to 10 business days through standardized workflows." },
+                        { name: "95% legacy comms shut off same sprint after CEP go-live", type: "kr", timeline: "2026", color: "#a855f7", detail: "Legacy CNH messages decommissioned within the same sprint their CEP replacements go live, preventing dual-system drift." }
+                    ]
+                },
+                {
+                    name: "Continuous performance optimization",
+                    type: "objective",
+                    color: "#a855f7",
+                    detail: "Make performance accountability the norm - every communication must prove its value or be iterated/retired.",
+                    children: [
+                        { name: "100% live comms with declared KPI", type: "kr", timeline: "2026", color: "#a855f7", detail: "Every active communication has a defined success metric (CTR, action completion, lift, etc.) with dashboard visibility." },
+                        { name: "90% underperformers retired within 90 days", type: "kr", timeline: "Ongoing", color: "#a855f7", detail: "Communications that miss their KPI targets are optimized or permanently removed within one quarter of underperformance." },
+                        { name: "Quarterly lifecycle reviews with keep/scale/retire decisions", type: "kr", timeline: "Ongoing", color: "#a855f7", detail: "Formal review each quarter evaluates every category and journey, making keep/scale/retire decisions based on ROI data." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "BackOffice Ledger",
+            type: "initiative",
+            color: "#eab308",
+            detail: "Authoritative, auditable record of every communication for investigation, compliance, and trust",
+            children: [
+                {
+                    name: "Complete communication traceability",
+                    type: "objective",
+                    color: "#eab308",
+                    detail: "Create a single source of truth for every communication sent - so Care, Risk, Compliance, and Product can always answer 'what did the customer receive and why?'",
+                    children: [
+                        { name: "95% sends ingested, under 1% recon error", type: "kr", timeline: "2026", color: "#eab308", detail: "95% of all communication sends captured in the BO ledger with less than 1% reconciliation discrepancy vs. CEP records." },
+                        { name: "Evidence packs available per journey", type: "kr", timeline: "2027", color: "#eab308", detail: "Complete, exportable audit packages showing every send, policy applied, and preference state for any given journey." },
+                        { name: "Full who/what/when/where/why + policy record per send", type: "kr", timeline: "2027", color: "#eab308", detail: "Each send record includes recipient identity, content version, timestamp, channel, trigger reason, and governance rules applied." }
+                    ]
+                },
+                {
+                    name: "Faster investigations & fewer tickets",
+                    type: "objective",
+                    color: "#eab308",
+                    detail: "Give Care, Risk, and Account Management teams instant timeline visibility so they can resolve 'what did the customer get?' questions in minutes, not hours.",
+                    children: [
+                        { name: "Comms ticket resolve time down 30-50%", type: "kr", timeline: "2027", color: "#eab308", detail: "Support agents resolve communication-related tickets 30-50% faster using the BO timeline instead of manual investigation." },
+                        { name: "Monthly active internal users (Care/Risk/Product)", type: "kr", timeline: "2027", color: "#eab308", detail: "Care, Risk, and Product teams actively using the BO ledger monthly for investigations, audits, and journey analysis." },
+                        { name: "Role + entity-scoped comms timeline searchable", type: "kr", timeline: "2027", color: "#eab308", detail: "BO supports searching communication history by person, user, account, business, and business group with role context." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "AI Integration",
+            type: "initiative",
+            color: "#ec4899",
+            detail: "Enhance communication creation, optimization, and customer transparency through governed, explainable AI",
+            children: [
+                {
+                    name: "Accelerate creation & ensure quality",
+                    type: "objective",
+                    color: "#ec4899",
+                    detail: "Use AI to speed up the creation-to-publish workflow (copy drafting, QA checks, localization) while policy-as-code ensures nothing ships without governance.",
+                    children: [
+                        { name: "Creation/QA cycle time reduced", type: "kr", timeline: "2026", color: "#ec4899", detail: "AI-assisted authoring, link checking, variable validation, and metadata classification speed up the creation-to-publish workflow." },
+                        { name: "0 late governance violations", type: "kr", timeline: "2026", color: "#ec4899", detail: "Policy-as-code catches all issues at build time; no governance violations are discovered after a communication is sent." },
+                        { name: "High acceptance rate of AI suggestions", type: "kr", timeline: "2026", color: "#ec4899", detail: "Teams adopt most AI-generated copy, QA fixes, and localization drafts with minimal manual revision needed." }
+                    ]
+                },
+                {
+                    name: "AI-driven journey optimization",
+                    type: "objective",
+                    color: "#ec4899",
+                    detail: "Layer intelligence onto existing journeys - optimizing when, what, and how messages are sent based on data, without bypassing governance.",
+                    children: [
+                        { name: "10-15% uplift on AI-optimized journeys", type: "kr", timeline: "2027", color: "#ec4899", detail: "Journeys using AI send-time optimization and subject/CTA tuning show 10-15% better CTR or action completion vs. control." },
+                        { name: "Collision reduction via automated detection", type: "kr", timeline: "2027", color: "#ec4899", detail: "AI detects overlapping or conflicting messages across journeys and surfaces before they reach customers." },
+                        { name: "Improved fatigue balance via AI proportionality scoring", type: "kr", timeline: "2027", color: "#ec4899", detail: "AI-driven proportionality scoring prevents over-messaging by balancing send volume across entity hierarchies and channels." }
+                    ]
+                },
+                {
+                    name: "Customer-facing transparency & guidance",
+                    type: "objective",
+                    color: "#ec4899",
+                    detail: "Turn AI into a customer-facing channel that explains why a message was sent, guides task completion, and provides contextual education.",
+                    children: [
+                        { name: "Closed-loop AI optimization on select journeys", type: "kr", timeline: "2028", color: "#ec4899", detail: "AI automatically tunes journey parameters (timing, channel, content variant) based on measured outcomes, within governed guardrails." },
+                        { name: "0 compliance exceptions for AI content", type: "kr", timeline: "2028", color: "#ec4899", detail: "All AI-generated or AI-influenced customer-facing content passes compliance review without exceptions or escalations." },
+                        { name: "Why did I get this explainability surface live", type: "kr", timeline: "2028", color: "#ec4899", detail: "Customers can see the specific trigger, eligibility conditions, and preference state behind any message they received." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Org Structure",
+            type: "initiative",
+            color: "#ef4444",
+            detail: "Centralize communications behind one front door with clear ownership, SLAs, and fast resolution",
+            children: [
+                {
+                    name: "Single entry point with clear SLAs",
+                    type: "objective",
+                    color: "#ef4444",
+                    detail: "Replace today's unclear routing with one Comms Service Desk that auto-triages every request to the right team with predefined SLAs.",
+                    children: [
+                        { name: "Request-to-resolution meets SLA", type: "kr", timeline: "2026", color: "#ef4444", detail: "Median time from request submission to resolution consistently meets the defined service-level target." },
+                        { name: "First-contact resolution rate increases", type: "kr", timeline: "2026", color: "#ef4444", detail: "More requests resolved by the first team contacted without needing to route to another team." },
+                        { name: "Handoffs per ticket decrease", type: "kr", timeline: "2026", color: "#ef4444", detail: "Fewer teams involved per request due to clear RACI, unified intake, and codified runbooks for top friction cases." }
+                    ]
+                },
+                {
+                    name: "Execution velocity on plan",
+                    type: "objective",
+                    color: "#ef4444",
+                    detail: "Track that legacy deprecation and CEP recreation are progressing on schedule - if we're not decommissioning, we're accumulating cost.",
+                    children: [
+                        { name: "Clean rate meets quarterly plan", type: "kr", timeline: "2026", color: "#ef4444", detail: "Legacy communication decommissioning stays on track with the planned quarterly deprecation schedule." },
+                        { name: "Creation rate meets quarterly targets", type: "kr", timeline: "2026", color: "#ef4444", detail: "Number of new CEP journey recreations meets the planned target each quarter." },
+                        { name: "Active templates reduced, reuse rate up", type: "kr", timeline: "2026-27", color: "#ef4444", detail: "Total template count decreases as standardized, reusable template families replace one-off variants." }
+                    ]
+                }
+            ]
+        }
+    ]
+};
+
+const TYPE_STYLES = {
+    vision:     { bg: "#1e3a5f", borderW: 2.5 },
+    initiative: { bg: "#1e293b", borderW: 2 },
+    objective:  { bg: "#111827", borderW: 1.5 },
+    kr:         { bg: "#0f172a", borderW: 1.2 },
+};
+
+const TYPE_LABELS = {
+    vision: "VISION",
+    initiative: "INITIATIVE",
+    objective: "OBJECTIVE",
+    kr: "KEY RESULT",
+};
+
+const container = document.getElementById("tree-container");
+const width = container.clientWidth;
+const height = container.clientHeight;
+
+const svg = d3.select("#tree-container").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+const g = svg.append("g");
+
+const zoom = d3.zoom()
+    .scaleExtent([2, 3])
+    .on("zoom", (event) => g.attr("transform", event.transform));
+
+svg.call(zoom);
+
+let isHorizontal = true;
+let root = d3.hierarchy(DATA);
+root.x0 = height / 2;
+root.y0 = 0;
+
+const nodeH = 44;
+
+function collapse(d) {
+    if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+    }
+}
+
+function expandNode(d) {
+    if (d._children) {
+        d.children = d._children;
+        d._children = null;
+    }
+}
+
+root.children.forEach(collapse);
+expandNode(root);
+
+function getNodeWidth(d) {
+    const len = d.data.name.length;
+    const base = Math.max(190, Math.min(340, len * 7.5 + 50));
+    if (d.data.type === "vision") return 320;
+    if (d.data.type === "initiative") return Math.max(220, base);
+    return base;
+}
+
+function truncate(str, max) {
+    return str.length > max ? str.substring(0, max - 1) + "\u2026" : str;
+}
+
+function getStyle(d) {
+    const s = TYPE_STYLES[d.data.type] || TYPE_STYLES.kr;
+    const color = d.data.color || "#475569";
+    return { ...s, border: color };
+}
+
+function update(source) {
+    const treeLayout = d3.tree()
+        .nodeSize(isHorizontal ? [nodeH + 18, 310] : [320, nodeH + 22])
+        .separation((a, b) => a.parent === b.parent ? 1.15 : 1.5);
+
+    treeLayout(root);
+
+    const nodes = root.descendants();
+    const links = root.links();
+
+    const linkGen = isHorizontal
+        ? d3.linkHorizontal().x(d => d.y).y(d => d.x)
+        : d3.linkVertical().x(d => d.x).y(d => d.y);
+
+    const link = g.selectAll(".link").data(links, d => d.target.data.name + d.target.depth);
+
+    link.enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("d", () => {
+            const o = { x: source.x0, y: source.y0 };
+            return linkGen({ source: o, target: o });
+        })
+        .merge(link)
+        .transition().duration(500)
+        .attr("d", d => linkGen(d))
+        .attr("stroke", d => (d.target.data.color || "#334155") + "35");
+
+    link.exit()
+        .transition().duration(300)
+        .attr("d", () => {
+            const o = { x: source.x, y: source.y };
+            return linkGen({ source: o, target: o });
+        })
+        .remove();
+
+    const node = g.selectAll(".node-group").data(nodes, d => d.data.name + d.depth);
+
+    const nodeEnter = node.enter()
+        .append("g")
+        .attr("class", "node-group")
+        .attr("transform", isHorizontal
+            ? `translate(${source.y0},${source.x0})`
+            : `translate(${source.x0},${source.y0})`)
+        .on("click", (event, d) => {
+            event.stopPropagation();
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else if (d._children) {
+                d.children = d._children;
+                d._children = null;
+            }
+            update(d);
+        })
+        .on("dblclick", (event, d) => {
+            event.stopPropagation();
+            zoomToNode(d);
+        })
+        .on("mouseenter", (event, d) => showTooltip(event, d))
+        .on("mouseleave", () => hideTooltip());
+
+    nodeEnter.append("rect")
+        .attr("class", "node-bg")
+        .attr("width", d => getNodeWidth(d))
+        .attr("height", nodeH)
+        .attr("x", d => -getNodeWidth(d) / 2)
+        .attr("y", -nodeH / 2)
+        .attr("fill", d => getStyle(d).bg)
+        .attr("stroke", d => getStyle(d).border)
+        .attr("stroke-width", d => getStyle(d).borderW);
+
+    nodeEnter.append("text")
+        .attr("class", "node-label")
+        .attr("text-anchor", "middle")
+        .attr("dy", d => d.data.timeline ? "-0.15em" : "0.35em")
+        .attr("font-size", d => {
+            if (d.data.type === "vision") return "13px";
+            if (d.data.type === "initiative") return "12px";
+            if (d.data.type === "objective") return "11.5px";
+            return "11px";
+        })
+        .attr("font-weight", d => {
+            if (d.data.type === "vision" || d.data.type === "initiative") return "600";
+            if (d.data.type === "objective") return "500";
+            return "400";
+        })
+        .attr("fill", d => d.data.type === "kr" ? "#94a3b8" : "#e2e8f0")
+        .text(d => {
+            const maxChars = Math.floor(getNodeWidth(d) / 7.2);
+            return truncate(d.data.name, maxChars);
+        });
+
+    nodeEnter.filter(d => d.data.timeline)
+        .append("text")
+        .attr("class", "node-sublabel")
+        .attr("text-anchor", "middle")
+        .attr("dy", "1.25em")
+        .attr("fill", d => (d.data.color || "#64748b") + "aa")
+        .text(d => d.data.timeline);
+
+    nodeEnter.filter(d => d._children || d.children)
+        .append("text")
+        .attr("class", "expand-indicator")
+        .attr("text-anchor", "middle")
+        .attr("x", d => getNodeWidth(d) / 2 - 14)
+        .attr("dy", "0.35em")
+        .text(d => d._children ? "+" : "\u2212");
+
+    const nodeUpdate = nodeEnter.merge(node);
+
+    nodeUpdate.transition().duration(500)
+        .attr("transform", d => isHorizontal
+            ? `translate(${d.y},${d.x})`
+            : `translate(${d.x},${d.y})`);
+
+    nodeUpdate.select(".expand-indicator")
+        .text(d => d._children ? "+" : (d.children ? "\u2212" : ""));
+
+    node.exit()
+        .transition().duration(300)
+        .attr("transform", isHorizontal
+            ? `translate(${source.y},${source.x})`
+            : `translate(${source.x},${source.y})`)
+        .style("opacity", 0)
+        .remove();
+
+    nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+}
+
+function zoomToNode(d) {
+    if (d._children) {
+        d.children = d._children;
+        d._children = null;
+        update(d);
+    }
+
+    setTimeout(() => {
+        const descendants = d.descendants();
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        descendants.forEach(n => {
+            const nx = isHorizontal ? n.y : n.x;
+            const ny = isHorizontal ? n.x : n.y;
+            minX = Math.min(minX, nx - 170);
+            maxX = Math.max(maxX, nx + 170);
+            minY = Math.min(minY, ny - 30);
+            maxY = Math.max(maxY, ny + 30);
+        });
+
+        const dx = maxX - minX + 80;
+        const dy = maxY - minY + 80;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        const scale = Math.max(Math.min(w / dx, h / dy, 1.8) * 0.85, 2);
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+
+        svg.transition().duration(750)
+            .call(zoom.transform, d3.zoomIdentity
+                .translate(w / 2 - cx * scale, h / 2 - cy * scale)
+                .scale(scale));
+
+        updateBreadcrumb(d);
+    }, 550);
+}
+
+function updateBreadcrumb(d) {
+    const path = [];
+    let current = d;
+    while (current) { path.unshift(current); current = current.parent; }
+
+    const bc = document.getElementById("breadcrumb");
+    bc.innerHTML = "";
+    path.forEach((node, i) => {
+        if (i > 0) {
+            const sep = document.createElement("span");
+            sep.className = "breadcrumb-sep";
+            sep.textContent = ">";
+            bc.appendChild(sep);
+        }
+        const item = document.createElement("span");
+        item.className = "breadcrumb-item" + (i === path.length - 1 ? " current" : "");
+        item.textContent = node.data.name.length > 40 ? node.data.name.substring(0, 37) + "..." : node.data.name;
+        if (i < path.length - 1) {
+            item.addEventListener("click", () => zoomToNode(node));
+        }
+        bc.appendChild(item);
+    });
+}
+
+function showTooltip(event, d) {
+    const tt = document.getElementById("tooltip");
+    const typeLabel = TYPE_LABELS[d.data.type] || d.data.type.toUpperCase();
+    const color = d.data.color || "#475569";
+    let html = `<span class="tooltip-type" style="background:${color}22;color:${color};border:1px solid ${color}44">${typeLabel}</span>`;
+    html += `<div class="tooltip-title">${d.data.name}</div>`;
+    if (d.data.detail) html += `<div style="margin:0.3rem 0;color:#cbd5e1">${d.data.detail}</div>`;
+    if (d.data.timeline) html += `<div class="tooltip-meta">Timeline: ${d.data.timeline}</div>`;
+    const childCount = (d.children || d._children || []).length;
+    if (childCount > 0) {
+        html += `<div class="tooltip-meta">${childCount} child node${childCount > 1 ? "s" : ""} ${d._children ? "(collapsed - click to expand)" : "(expanded)"}</div>`;
+    }
+    html += `<div class="tooltip-meta" style="margin-top:0.3rem;color:#60a5fa">Double-click to zoom and focus</div>`;
+    tt.innerHTML = html;
+    tt.classList.add("show");
+
+    const x = Math.min(event.clientX + 15, window.innerWidth - 400);
+    const y = Math.min(event.clientY + 15, window.innerHeight - 180);
+    tt.style.left = x + "px";
+    tt.style.top = y + "px";
+}
+
+function hideTooltip() {
+    document.getElementById("tooltip").classList.remove("show");
+}
+
+function resetView() {
+    root.children?.forEach(collapse);
+    expandNode(root);
+    update(root);
+    setTimeout(() => {
+        svg.transition().duration(600)
+            .call(zoom.transform, d3.zoomIdentity.translate(80, height / 2).scale(2));
+        updateBreadcrumb(root);
+    }, 550);
+}
+
+function expandAll() {
+    function expandR(d) {
+        if (d._children) { d.children = d._children; d._children = null; }
+        if (d.children) d.children.forEach(expandR);
+    }
+    expandR(root);
+    update(root);
+    setTimeout(() => {
+        const nodes = root.descendants();
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        nodes.forEach(n => {
+            const nx = isHorizontal ? n.y : n.x;
+            const ny = isHorizontal ? n.x : n.y;
+            minX = Math.min(minX, nx); maxX = Math.max(maxX, nx);
+            minY = Math.min(minY, ny); maxY = Math.max(maxY, ny);
+        });
+        const dx = maxX - minX + 500;
+        const dy = maxY - minY + 200;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        const scale = Math.max(Math.min(w / dx, h / dy, 1) * 0.85, 2);
+        svg.transition().duration(600)
+            .call(zoom.transform, d3.zoomIdentity
+                .translate(w / 2 - (minX + maxX) / 2 * scale, h / 2 - (minY + maxY) / 2 * scale)
+                .scale(scale));
+    }, 550);
+}
+
+function collapseAll() {
+    root.children?.forEach(collapse);
+    expandNode(root);
+    update(root);
+    setTimeout(() => {
+        svg.transition().duration(600)
+            .call(zoom.transform, d3.zoomIdentity.translate(80, height / 2).scale(2));
+        updateBreadcrumb(root);
+    }, 550);
+}
+
+function toggleOrientation() {
+    isHorizontal = !isHorizontal;
+    document.getElementById("toggleLayout").textContent = isHorizontal ? "Vertical" : "Horizontal";
+    update(root);
+    setTimeout(() => {
+        svg.transition().duration(600)
+            .call(zoom.transform, d3.zoomIdentity.translate(
+                isHorizontal ? 80 : container.clientWidth / 2,
+                isHorizontal ? height / 2 : 60
+            ).scale(2));
+    }, 550);
+}
+
+update(root);
+svg.call(zoom.transform, d3.zoomIdentity.translate(80, height / 2).scale(2));
+
+setTimeout(() => {
+    const hint = document.getElementById("hint");
+    hint.style.opacity = "0";
+    setTimeout(() => hint.remove(), 500);
+}, 7000);
+
+window.addEventListener("resize", () => {
+    svg.attr("width", container.clientWidth).attr("height", container.clientHeight);
+});
+</script>
+
+</body>
+</html>
