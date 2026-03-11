@@ -5675,6 +5675,26 @@ function updateCompanyTree(source) {
         .attr('fill', '#c4a0ff').attr('opacity', 0)
         .text('\u25BC view OKRs');
 
+    const expandHit = enter.filter(d => (d.data.type === 'company' || d.data.type === 'department') && ((d.children && d.children.length) || d._children));
+    expandHit.append('rect').attr('class', 'expand-indicator-hit')
+        .attr('x', CW / 2 - 28).attr('y', -CH / 2).attr('width', 28).attr('height', CH)
+        .attr('fill', 'transparent').style('cursor', 'pointer')
+        .on('click', (e, d) => {
+            e.stopPropagation();
+            if (d.data.empty) return;
+            selectedCompanyNodeId = d.id;
+            const wasExpanding = !!d._children;
+            if (d.children) { d._children = d.children; d.children = null; }
+            else if (d._children) { d.children = d._children; d._children = null; }
+            updateCompanyTree(d);
+            setTimeout(() => {
+                if (wasExpanding) {
+                    lastExpandTime = Date.now();
+                    panToExpandedNode(companySvg, companyZoom, d, companyContainer, companyHorizontal, 0);
+                }
+            }, 550);
+        });
+
     enter.filter(d => !d.data.empty && !['company','department','subdepartment'].includes(d.data.type)).append('text').attr('class', 'node-edit-btn')
         .attr('x', CW / 2 - 12).attr('y', -CH / 2 + 12)
         .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
@@ -5720,7 +5740,7 @@ function updateCompanyTree(source) {
         })
         .attr('stroke-dasharray', d => d.data.type === 'kr' ? '6,4' : 'none');
     all.select('.expand-indicator')
-        .text(d => d.data.empty ? '' : d._children ? '+' : (d.children ? '\u2212' : ''));
+        .text(d => d.data.empty ? '' : (d.children && d.children.length) ? '\u2212' : (d._children ? '+' : ''));
 
     node.exit().transition().duration(dur)
         .attr('transform', `translate(${companyHorizontal ? source.y : source.x},${companyHorizontal ? source.x : source.y})`)
