@@ -1319,7 +1319,7 @@
                 <tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:0.4rem 0.5rem">Level</th><th style="text-align:left;padding:0.4rem 0.5rem">Purpose</th></tr>
                 <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Objective</td><td style="padding:0.4rem 0.5rem">The outcome you want to achieve</td></tr>
                 <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Key Results</td><td style="padding:0.4rem 0.5rem">Metrics that prove the outcome is improving</td></tr>
-                <tr><td style="padding:0.4rem 0.5rem;font-weight:600">Initiatives</td><td style="padding:0.4rem 0.5rem">Actions or projects executed to move the metrics</td></tr>
+                <tr><td style="padding:0.4rem 0.5rem;font-weight:600">Initiatives</td><td style="padding:0.4rem 0.5rem">Solutions or experiments intended to move Key Results</td></tr>
             </table>
         </div>
     </div>
@@ -1362,8 +1362,15 @@
     <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Initiatives</h4>
         <div class="guide-content">
-            <p>Initiatives are <strong>actions or projects executed to move the metrics</strong>. They are the work you do to achieve the Key Results.</p>
-            <p>Initiatives sit under Key Results — each Key Result can have one or more initiatives that drive progress toward that metric.</p>
+            <p>In the OKR + Continuous Discovery context (<em>Continuous Discovery Habits</em>), an <strong>initiative</strong> is a solution or experiment intended to move one or more Key Results.</p>
+            <p>Initiatives sit under Key Results. Each initiative should clearly show:</p>
+            <ul style="margin:0.5rem 0;padding-left:1.2rem;line-height:1.6">
+                <li><strong>What</strong> the initiative is (solution or experiment)</li>
+                <li><strong>Which Key Result</strong> it impacts</li>
+                <li><strong>Why</strong> it should move that metric</li>
+                <li><strong>How</strong> success will be evaluated</li>
+            </ul>
+            <p>This structure works well for product teams and for AI-generated OKR trees.</p>
         </div>
     </div>
 
@@ -1375,7 +1382,7 @@
             <div class="guide-rule"><strong>Rule 3:</strong> Each Objective should have 2-5 Key Results.</div>
             <div class="guide-rule"><strong>Rule 4:</strong> Key Results must contain measurable metrics.</div>
             <div class="guide-rule"><strong>Rule 5:</strong> OKRs must not reference features, technologies, or implementation.</div>
-            <div class="guide-rule"><strong>Rule 6:</strong> Solutions, experiments, and features belong outside the OKR structure.</div>
+            <div class="guide-rule"><strong>Rule 6:</strong> Solutions and experiments belong as Initiatives under Key Results — not in Objectives or Key Results themselves.</div>
         </div>
     </div>
 
@@ -1403,7 +1410,7 @@
                 Company / Department / Sub-Department<br>
                 &nbsp;&nbsp;&#8627; Objective (outcome you want)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;&#8627; Key Results (metrics that prove it)<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8627; Initiatives (actions to move the metrics)
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8627; Initiatives (solutions/experiments to move the metrics)
             </p>
             <p><strong>Objective → Key Results → Initiatives.</strong> Outcomes first, then metrics, then the work that drives them.</p>
         </div>
@@ -2250,10 +2257,10 @@ Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (action
           "detail": "<What this metric measures>",
           "children": [
             {
-              "name": "<Initiative - action or project to move the metric>",
+              "name": "<What the initiative is - solution or experiment>",
               "type": "initiative",
               "color": "<same hex as parent>",
-              "detail": "<What this initiative does>"
+              "detail": "<Why it should move this KR; how success will be evaluated. Parent KR = which metric it impacts.>"
             }
           ]
         }
@@ -2265,7 +2272,7 @@ Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (action
 RULES:
 1. Objective = the outcome you want to achieve. Must describe desired OUTCOMES — NEVER features, deliverables, or solutions.
 2. Key Results = metrics that prove the outcome is improving. Must measure OBSERVABLE OUTCOMES.
-3. Initiatives = actions or projects executed to move the metrics. Sit under Key Results.
+3. Initiatives = solutions or experiments intended to move Key Results. Each must show: what it is, which KR it impacts (parent), why it moves that metric, how success is evaluated. Sit under Key Results.
 4. Key Results should follow: "[Increase/Reduce] [metric] from [baseline] to [target]" when numbers are provided.
 5. Each Objective should have 2-5 Key Results. Each Key Result can have 1+ Initiatives.
 6. NEVER reference specific technologies, tools, platforms, or features (e.g. no "Braze", "CEP", "chatbot", "AI assistant"). If the document describes a solution, translate it into the outcome it intends to achieve.
