@@ -129,6 +129,8 @@
         }
         .cs-item:hover { background: #9b30ff; color: #fff; }
         .cs-item.selected { background: #9b30ff33; color: var(--accent); font-weight: 600; }
+        .cs-item-add { color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 2px; padding-top: 4px; }
+        .cs-item-add:hover { color: var(--accent); }
         .textarea { min-height: 200px; resize: vertical; line-height: 1.6; }
 
         .input-tabs { display: flex; gap: 0; margin-bottom: 1rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
@@ -856,6 +858,12 @@
         }
         .settings-header h3 { font-size: 1.05rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
         .settings-header h3 svg { opacity: 0.7; }
+        .settings-close {
+            margin-left: auto; background: none; border: none; color: var(--text-muted);
+            font-size: 1.35rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 8px;
+            line-height: 1; transition: color 0.15s, background 0.15s;
+        }
+        .settings-close:hover { color: var(--text); background: rgba(255,255,255,0.06); }
         .settings-tabs {
             display: flex; border-bottom: 1px solid var(--border); padding: 0 1.5rem;
         }
@@ -962,7 +970,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Settings
             </h3>
-            <button class="em-close" onclick="closeSettings()">&times;</button>
+            <button class="settings-close" type="button" onclick="closeSettings()" title="Close">&times;</button>
         </div>
         <div class="settings-tabs" id="settingsTabs">
             <button class="settings-tab active" data-tab="account" onclick="switchSettingsTab('account')">Account</button>
@@ -988,7 +996,7 @@
         <p>Upload a strategy doc, select your department, and generate an interactive OKR tree</p>
     </div>
     <div class="header-actions">
-        <button class="btn btn-sm" id="navGallery" onclick="showGalleryView()">All Trees</button>
+        <button class="btn btn-sm" id="navGallery" onclick="showGalleryView()">Tree Manager</button>
         <button class="btn btn-sm" id="navCompany" onclick="showCompanyView()">Company Overview</button>
         <button class="btn btn-sm" id="newTreeBtn" onclick="showInputView()">+ New Tree</button>
         <button class="btn btn-sm" onclick="toggleGuide()" style="border-color:var(--accent);color:#ffffff">OKR Guide</button>
@@ -1143,7 +1151,7 @@
         </div>
     </div>
     <div class="breadcrumb" id="breadcrumb">
-        <span class="breadcrumb-item" onclick="showGalleryView()">All Trees</span>
+        <span class="breadcrumb-item" onclick="showGalleryView()">Tree Manager</span>
         <span class="breadcrumb-sep">&gt;</span>
         <span class="breadcrumb-item current">OKR Tree</span>
     </div>
@@ -1204,7 +1212,7 @@
         </div>
     </div>
     <div class="breadcrumb" id="companyBreadcrumb">
-        <span class="breadcrumb-item" onclick="showGalleryView()">All Trees</span>
+        <span class="breadcrumb-item" onclick="showGalleryView()">Tree Manager</span>
         <span class="breadcrumb-sep">&gt;</span>
         <span class="breadcrumb-item current">Company OKR Overview</span>
     </div>
@@ -1912,6 +1920,24 @@ const SUB_DEPARTMENTS = {
     "CLM": []
 };
 
+const CUSTOM_SUB_DEPARTMENTS_KEY = 'okr_custom_sub_departments';
+function getCustomSubDepartments() { return JSON.parse(localStorage.getItem(CUSTOM_SUB_DEPARTMENTS_KEY) || '{}'); }
+function saveCustomSubDepartments(obj) { localStorage.setItem(CUSTOM_SUB_DEPARTMENTS_KEY, JSON.stringify(obj)); }
+function getSubDepartments(dept) {
+    const custom = getCustomSubDepartments()[dept] || [];
+    return (SUB_DEPARTMENTS[dept] || []).concat(custom);
+}
+function addCustomSubDepartment(dept, name) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return false;
+    const c = getCustomSubDepartments();
+    if (!c[dept]) c[dept] = [];
+    if (c[dept].includes(trimmed)) return false;
+    c[dept].push(trimmed);
+    saveCustomSubDepartments(c);
+    return true;
+}
+
 const DEPT_OKRS = {
 };
 
@@ -2261,26 +2287,48 @@ function initCSClicks(dropdownId, nativeSelectId) {
 initCSClicks('deptDropdown', 'department');
 initCSClicks('subDeptDropdown', 'subDepartment');
 
+document.querySelector('#subDeptDropdown .cs-list').addEventListener('click', (e) => {
+    const item = e.target.closest('.cs-item[data-value="__add_new__"]');
+    if (item) {
+        e.stopImmediatePropagation();
+        if (typeof toggleCS === 'function') toggleCS('subDeptDropdown');
+        handleAddNewSubDepartment();
+    }
+}, true);
+
+function populateSubDeptDropdown(val) {
+    const subs = getSubDepartments(val);
+    subDeptGroup.style.display = val ? '' : 'none';
+    if (!val) {
+        subDeptSelect.innerHTML = '<option value="">Select sub-department...</option>';
+        document.querySelector('#subDeptDropdown .cs-list').innerHTML = '';
+        document.querySelector('#subDeptDropdown .cs-btn').innerHTML = `<span class="cs-placeholder">Select sub-department...</span><span class="cs-arrow">&#9660;</span>`;
+        return;
+    }
+    subDeptSelect.innerHTML = '<option value="">All of ' + val + '</option>'
+        + subs.map(s => `<option>${s}</option>`).join('')
+        + '<option value="__add_new__">＋ Add new sub-department...</option>';
+    const subList = document.querySelector('#subDeptDropdown .cs-list');
+    subList.innerHTML = `<div class="cs-item" data-value="">All of ${val}</div>`
+        + subs.map(s => `<div class="cs-item" data-value="${s}">${s}</div>`).join('')
+        + '<div class="cs-item cs-item-add" data-value="__add_new__">＋ Add new sub-department...</div>';
+    document.querySelector('#subDeptDropdown .cs-btn').innerHTML = `<span class="cs-placeholder">All of ${val}</span><span class="cs-arrow">&#9660;</span>`;
+}
+
+function handleAddNewSubDepartment() {
+    const baseDept = deptSelect.value;
+    if (!baseDept) return;
+    const name = prompt('Enter the new sub-department name:');
+    if (!name || !name.trim()) return;
+    if (!addCustomSubDepartment(baseDept, name.trim())) return;
+    populateSubDeptDropdown(baseDept);
+    selectCSItem('subDeptDropdown', name.trim(), name.trim(), 'subDepartment');
+    updateDataStatus();
+}
+
 deptSelect.addEventListener('change', () => {
     const val = deptSelect.value;
-    const subs = SUB_DEPARTMENTS[val] || [];
-    if (subs.length > 0) {
-        subDeptGroup.style.display = '';
-        subDeptSelect.innerHTML = '<option value="">All of ' + val + '</option>'
-            + subs.map(s => `<option>${s}</option>`).join('');
-        const subList = document.querySelector('#subDeptDropdown .cs-list');
-        subList.innerHTML = `<div class="cs-item" data-value="">All of ${val}</div>`
-            + subs.map(s => `<div class="cs-item" data-value="${s}">${s}</div>`).join('');
-        const subBtn = document.querySelector('#subDeptDropdown .cs-btn');
-        subBtn.innerHTML = `<span class="cs-placeholder">All of ${val}</span><span class="cs-arrow">&#9660;</span>`;
-    } else {
-        subDeptGroup.style.display = 'none';
-        subDeptSelect.innerHTML = '<option value="">Select sub-department...</option>';
-        const subList = document.querySelector('#subDeptDropdown .cs-list');
-        subList.innerHTML = '';
-        const subBtn = document.querySelector('#subDeptDropdown .cs-btn');
-        subBtn.innerHTML = `<span class="cs-placeholder">Select sub-department...</span><span class="cs-arrow">&#9660;</span>`;
-    }
+    populateSubDeptDropdown(val);
     updateDataStatus();
 });
 
@@ -3264,7 +3312,7 @@ window.handleChipAction = function(action) {
                 addBotMessage(
                     `<p><strong>Here's how to get the most out of PayOKR:</strong></p>
                     <ul>
-                    <li><strong>Load a tree</strong> — select a department from "All Trees" or generate one from a strategy doc</li>
+                    <li><strong>Load a tree</strong> — select a department from "Tree Manager" or generate one from a strategy doc</li>
                     <li><strong>Navigate</strong> — click nodes to expand/collapse, double-click to zoom into a subtree</li>
                     <li><strong>Edit</strong> — right-click any node to edit its name, type, or details</li>
                     <li><strong>Pan &amp; Zoom</strong> — scroll to zoom, drag to pan, Ctrl+drag to box-zoom an area</li>
@@ -3917,7 +3965,7 @@ function demoRespond(text, lower) {
     const dept = currentDept || 'your department';
 
     if (/how many|count|total|number of/i.test(lower)) {
-        if (!currentData) return '<p>No tree is loaded yet. Open one from <strong>All Trees</strong> or the <strong>Company Overview</strong> and I can tell you all about it!</p>';
+        if (!currentData) return '<p>No tree is loaded yet. Open one from <strong>Tree Manager</strong> or the <strong>Company Overview</strong> and I can tell you all about it!</p>';
         return `<p>Here's a quick count for <strong>${escapeHtml(dept)}</strong>:</p>
             <ul><li><strong>${initiatives.length}</strong> initiative${initiatives.length !== 1 ? 's' : ''}</li>
             <li><strong>${objectives.length}</strong> objective${objectives.length !== 1 ? 's' : ''}</li>
@@ -3926,7 +3974,7 @@ function demoRespond(text, lower) {
     }
 
     if (/what.*tree|tell me about|summarize|summary|overview/i.test(lower)) {
-        if (!currentData) return '<p>No tree loaded right now. Head to <strong>All Trees</strong> to pick one, or check the <strong>Company Overview</strong> for the big picture!</p>';
+        if (!currentData) return '<p>No tree loaded right now. Head to <strong>Tree Manager</strong> to pick one, or check the <strong>Company Overview</strong> for the big picture!</p>';
         let html = `<p>You're looking at <strong>${escapeHtml(treeName || dept)}</strong>.</p><p>It has <strong>${initiatives.length} initiative${initiatives.length !== 1 ? 's' : ''}</strong>, <strong>${objectives.length} objective${objectives.length !== 1 ? 's' : ''}</strong>, and <strong>${krs.length} KR${krs.length !== 1 ? 's' : ''}</strong>.</p>`;
         if (initiatives.length > 0) {
             html += '<p>Key strategic initiatives:</p><ul>';
@@ -4011,7 +4059,7 @@ function demoRespond(text, lower) {
 
     if (/hi|hello|hey|what's up|sup|yo|good morning|good afternoon/i.test(lower) && lower.length < 30) {
         const greetings = [
-            `<p>Hey there! I'm OKRA, your OKR buddy. I'm here to help you build outcome-focused OKR trees.</p><p>${currentData ? 'I can see you have <strong>' + escapeHtml(dept) + '</strong> loaded. Want me to review it?' : 'Load a tree from <strong>All Trees</strong> and I can help you sharpen it!'}</p>`,
+            `<p>Hey there! I'm OKRA, your OKR buddy. I'm here to help you build outcome-focused OKR trees.</p><p>${currentData ? 'I can see you have <strong>' + escapeHtml(dept) + '</strong> loaded. Want me to review it?' : 'Load a tree from <strong>Tree Manager</strong> and I can help you sharpen it!'}</p>`,
             `<p>Hi! Ready to make some great OKRs? ${currentData ? 'I see your <strong>' + escapeHtml(dept) + '</strong> tree — want a quick health check?' : 'Open a tree and let\'s get started!'}</p>`,
             `<p>Hello! OKRA at your service. Ask me anything about OKRs, or use the quick actions below to get started!</p>`
         ];
@@ -4563,7 +4611,7 @@ function updateBreadcrumb(d) {
 
     const allItem = document.createElement('span');
     allItem.className = 'breadcrumb-item';
-    allItem.textContent = 'All Trees';
+    allItem.textContent = 'Tree Manager';
     allItem.addEventListener('click', () => showGalleryView());
     bc.appendChild(allItem);
 
@@ -5071,7 +5119,7 @@ window.showGalleryView = function(fromTab) {
     document.getElementById('gallery-view').classList.add('active');
     document.getElementById('navGallery').classList.add('nav-active');
     renderGallery();
-    if (!fromTab) addTab('tab-gallery', 'All Trees', '#8b8fa8', () => showGalleryView(true));
+    if (!fromTab) addTab('tab-gallery', 'Tree Manager', '#8b8fa8', () => showGalleryView(true));
 };
 
 let gallerySortCol = 'dept';
@@ -5320,7 +5368,7 @@ function buildCompanyData() {
 
     const deptChildren = Object.entries(deptMap).map(([dept, info]) => {
         const hasTreeData = info.subs.length > 0;
-        const definedSubs = SUB_DEPARTMENTS[dept] || [];
+        const definedSubs = getSubDepartments(dept);
         let children = [];
 
         if (definedSubs.length > 0) {
