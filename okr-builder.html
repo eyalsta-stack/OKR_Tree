@@ -6301,8 +6301,8 @@ function fitCompanyWindow() {
 
     const bw = maxX - minX, bh = maxY - minY;
     if (!Number.isFinite(bw) || !Number.isFinite(bh) || bw <= 0 || bh <= 0) return;
-    // Initial proportion: tree ~55% of viewport so it sits centered with comfortable margin (matches Company Overview screenshot)
-    const scale = Math.min(Math.max(Math.min(w / bw, h / bh) * 0.55, 0.05), 5);
+    // Initial proportion: tree ~70% of viewport so it sits centered with comfortable margin
+    const scale = Math.min(Math.max(Math.min(w / bw, h / bh) * 0.7, 0.05), 5);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     const t = d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale);
     companySvg.call(companyZoom.transform, t);
