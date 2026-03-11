@@ -2644,7 +2644,7 @@ window.dismissOkraBubble = function() {
 const NEXT_STEP = {
     company: { next: 'Departments', action: 'define your <strong>departments</strong>' },
     department: { next: 'Sub-Departments or Initiatives', action: 'add <strong>sub-departments</strong> or <strong>initiatives</strong>' },
-    subdepartment: { next: 'Initiatives', action: 'create <strong>initiatives</strong>' },
+    subdepartment: { next: 'Objectives', action: 'right-click to add <strong>objectives</strong>' },
     initiative: { next: 'Objectives', action: 'set <strong>objectives</strong>' },
     objective: { next: 'Key Results', action: 'define <strong>key results</strong>' },
     kr: { next: null, action: null }
@@ -3822,6 +3822,39 @@ window.toggleOrientation = function() {
     setTimeout(() => fitTreeToScreen(svg, zoomBehavior, root, treeContainer, isHorizontal), 550);
 };
 
+// Transform old structure (Initiative → Objective → KR) to new (Objective → KR → Initiative)
+// Only at root level when children are initiatives
+function transformToNewStructure(node) {
+    if (!node) return node;
+    const children = node.children || [];
+    const firstChild = children[0];
+    const allInitiatives = firstChild && children.every(c => c.type === 'initiative');
+    if (allInitiatives && (node.type === 'company' || !node.type)) {
+        const objectives = [];
+        children.forEach(init => {
+            if (init.type !== 'initiative' || !init.children) return;
+            init.children.forEach(obj => {
+                if (obj.type !== 'objective') return;
+                const newObj = { ...obj, children: [] };
+                (obj.children || []).forEach(kr => {
+                    if (kr.type !== 'kr') return;
+                    const initiativeChild = {
+                        name: init.name,
+                        type: 'initiative',
+                        color: kr.color || init.color,
+                        detail: (init.detail || '') + (kr.detail ? ' — Moves this KR: ' + kr.detail : '')
+                    };
+                    newObj.children.push({ ...kr, children: [initiativeChild] });
+                });
+                objectives.push(newObj);
+            });
+        });
+        return { ...node, children: objectives };
+    }
+    const newChildren = (node.children || []).map(c => transformToNewStructure(c));
+    return { ...node, children: newChildren };
+}
+
 // Merge pre-stored + localStorage trees (pre-stored first, deduped by dept)
 function getAllTrees() {
     const saved = JSON.parse(localStorage.getItem('okr_trees') || '[]');
@@ -3830,11 +3863,11 @@ function getAllTrees() {
         name: data.name,
         dept: dept,
         date: 'Pre-stored',
-        data: data,
+        data: transformToNewStructure(data),
         isStored: true
     }));
     const savedDepts = new Set(saved.map(t => t.dept));
-    const merged = [...stored.filter(s => !savedDepts.has(s.dept)), ...saved];
+    const merged = [...stored.filter(s => !savedDepts.has(s.dept)), ...saved.map(t => ({ ...t, data: transformToNewStructure(t.data) }))];
     return merged;
 }
 
@@ -3876,27 +3909,34 @@ function openEditModal(event, d, isCompany) {
     const data = d.data;
     if (data.empty) return;
     const orgTypes = ['company', 'department', 'subdepartment'];
-    if (orgTypes.includes(data.type)) return;
+    const isOrgNode = orgTypes.includes(data.type);
     document.getElementById('emName').value = data.name || '';
     document.getElementById('emDetail').value = data.detail || '';
     document.getElementById('emType').value = data.type || 'objective';
     document.getElementById('emTimeline').value = data.timeline || '';
 
-    const coSelect = document.getElementById('emCompanyOkr');
-    coSelect.innerHTML = '<option value="">None</option>';
-    Object.keys(COMPANY_OKRS).forEach(k => {
-        const opt = document.createElement('option');
-        opt.value = k; opt.textContent = k;
-        if (data.companyOkr === k) opt.selected = true;
-        coSelect.appendChild(opt);
+    const modal = document.querySelector('.edit-modal');
+    modal.querySelectorAll('.em-field, .em-actions, .em-delete').forEach(el => {
+        el.style.display = isOrgNode ? 'none' : '';
     });
 
+    const coSelect = document.getElementById('emCompanyOkr');
+    if (coSelect) {
+        coSelect.innerHTML = '<option value="">None</option>';
+        Object.keys(COMPANY_OKRS).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k; opt.textContent = k;
+            if (data.companyOkr === k) opt.selected = true;
+            coSelect.appendChild(opt);
+        });
+    }
+
     const typeLabel = TYPE_LABELS[data.type] || data.type;
-    document.getElementById('emTitle').textContent = 'Edit ' + typeLabel;
+    document.getElementById('emTitle').textContent = isOrgNode ? (data.name || typeLabel) : ('Edit ' + typeLabel);
 
     const emAdd = document.getElementById('emAdd');
     emAdd.innerHTML = '';
-    const canAddObjective = data.type === 'initiative';
+    const canAddObjective = isOrgNode || data.type === 'initiative';
     const canAddKR = data.type === 'objective';
     const canAddInitiative = data.type === 'kr';
     if (canAddObjective) {
