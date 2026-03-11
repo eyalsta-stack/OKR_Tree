@@ -5508,10 +5508,10 @@ function _renderCompanyTreeCore(companyData) {
     const safeData = { name: companyData.name || 'Company', type: 'company', children: companyData.children || [] };
     companyRoot = d3.hierarchy(safeData);
     companyRoot.x0 = 0; companyRoot.y0 = 0;
-    const orgLevels = new Set(['company', 'department', 'subdepartment']);
+    const openToSubDept = new Set(['company', 'department']);
     companyRoot.descendants().forEach((d, i) => {
         d.id = i;
-        if (orgLevels.has(d.data.type)) {
+        if (openToSubDept.has(d.data.type)) {
             if (d._children) { d.children = d._children; d._children = null; }
         } else {
             if (d.children) { d._children = d.children; d.children = null; }
