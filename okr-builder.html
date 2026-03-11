@@ -5241,25 +5241,35 @@ window.showCompanyView = function(fromTab) {
 };
 
 function buildCompanyData() {
-    let trees = getAllTrees();
-    if (trees.length === 0 && Object.keys(STORED_TREES).length > 0) {
-        trees = Object.entries(STORED_TREES).map(([dept, data]) => ({
-            id: 'stored_' + dept.replace(/\s+/g, '_'),
-            name: data.name,
-            dept: dept,
-            date: 'Pre-stored',
-            data: transformToNewStructure(data),
-            isStored: true
-        }));
-    }
+    try {
+        let trees = getAllTrees();
+        if (trees.length === 0 && Object.keys(STORED_TREES).length > 0) {
+            trees = Object.entries(STORED_TREES).map(([dept, data]) => {
+                let treeData = data;
+                try {
+                    treeData = transformToNewStructure(data);
+                } catch (_) {
+                    treeData = data;
+                }
+                return {
+                    id: 'stored_' + (dept || '').replace(/\s+/g, '_'),
+                    name: (data && data.name) || dept,
+                    dept: dept,
+                    date: 'Pre-stored',
+                    data: treeData,
+                    isStored: true
+                };
+            });
+        }
 
-    const deptMap = {};
-    Object.keys(SUB_DEPARTMENTS).forEach(dept => {
-        deptMap[dept] = { color: DEPT_COLORS[dept] || '#9b30ff', subs: [] };
-    });
+        const deptMap = {};
+        Object.keys(SUB_DEPARTMENTS).forEach(dept => {
+            deptMap[dept] = { color: DEPT_COLORS[dept] || '#9b30ff', subs: [] };
+        });
 
-    trees.forEach(t => {
-        const parts = t.dept.split(' - ');
+        trees.forEach(t => {
+            const deptStr = (t && t.dept) || '';
+            const parts = deptStr.split(' - ');
         const parentDept = parts[0];
         const subDept = parts.length > 1 ? parts.slice(1).join(' - ') : null;
         if (!deptMap[parentDept]) {
@@ -5281,13 +5291,14 @@ function buildCompanyData() {
                 const match = treeBySubDept[sub];
                 const subKey = `${dept} - ${sub}`;
                 const subColor = DEPT_COLORS[subKey] || info.color;
-                if (match) {
+                if (match && match.tree && match.tree.data) {
+                    const d = match.tree.data;
                     return {
                         name: sub,
                         type: "subdepartment",
                         color: subColor,
-                        detail: match.tree.data.detail || match.tree.data.name,
-                        children: match.tree.data.children || []
+                        detail: d.detail || d.name || '',
+                        children: d.children || []
                     };
                 } else {
                     return {
@@ -5391,6 +5402,10 @@ function buildCompanyData() {
 
     companyTree._sharedPairs = Object.values(subDeptShares);
     return companyTree;
+    } catch (err) {
+        console.error('buildCompanyData error', err);
+        return null;
+    }
 }
 
 function renderCompanyTree() {
@@ -5419,17 +5434,23 @@ function renderCompanyTree() {
         return;
     }
 
+    if (typeof d3 === 'undefined') {
+        companyContainer.innerHTML = '<div class="company-empty-state"><div>D3.js did not load.</div><p style="font-size:0.85rem;margin-top:0.5rem;color:var(--text-muted)">Open the app in your browser (not in a preview iframe) or check your connection.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="showGalleryView()">Open gallery</button></div>';
+        return;
+    }
     try {
         _renderCompanyTreeCore(companyData);
     } catch (err) {
         console.error('renderCompanyTree error', err);
-        companyContainer.innerHTML = '<div class="company-empty-state"><div>Could not draw the company tree.</div><p style="font-size:0.85rem;margin-top:0.5rem;color:var(--text-muted)">Try opening the app in your browser directly or check the console.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="showGalleryView()">Open gallery</button></div>';
+        companyContainer.innerHTML = '<div class="company-empty-state"><div>Could not draw the company tree.</div><p style="font-size:0.85rem;margin-top:0.5rem;color:var(--text-muted)">' + (err && err.message ? err.message : 'Check the browser console (F12) for details.') + '</p><button class="btn btn-primary" style="margin-top:1rem" onclick="showGalleryView()">Open gallery</button></div>';
     }
 }
 
 function _renderCompanyTreeCore(companyData) {
+    if (!companyData || !companyContainer) return;
     const width = companyContainer.clientWidth;
     const height = companyContainer.clientHeight;
+    if (!width || !height) return;
 
     companySvg = d3.select(companyContainer).append('svg').attr('class', 'tree-svg').attr('width', width).attr('height', height);
     companyG = companySvg.append('g');
@@ -5444,22 +5465,25 @@ function _renderCompanyTreeCore(companyData) {
     const cdefs = companySvg.append('defs');
     cdefs.append('clipPath').attr('id', 'company-node-clip');
 
-    companyRoot = d3.hierarchy(companyData);
+    const safeData = { name: companyData.name || 'Company', type: 'company', children: companyData.children || [] };
+    companyRoot = d3.hierarchy(safeData);
     companyRoot.x0 = 0; companyRoot.y0 = 0;
     companyRoot.descendants().forEach((d, i) => {
         d.id = i;
-        if (d.depth > 1) { d._children = d.children; d.children = null; }
+        if (d.depth > 1 && d.children) { d._children = d.children; d.children = null; }
     });
 
     updateCompanyTree(companyRoot);
-    setTimeout(() => fitCompanyWindow(), 100);
+    setTimeout(() => { if (typeof fitCompanyWindow === 'function') fitCompanyWindow(); }, 100);
 }
 
 function updateCompanyTree(source) {
+    if (!companyContainer || !companyG || !source) return;
+    const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
+    if (!w || !h) return;
     expandedCards.clear();
     Object.keys(nodeOffsets).forEach(k => delete nodeOffsets[k]);
     const CW = NODE_W, CH = NODE_H;
-    const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
     const treeFn = companyHorizontal
         ? d3.tree().nodeSize([CH + 20, CW + 100]).separation((a, b) => a.parent === b.parent ? 1.2 : 1.6)
         : d3.tree().nodeSize([CW + 40, CH + 60]).separation((a, b) => a.parent === b.parent ? 1.2 : 1.5);
@@ -6180,6 +6204,9 @@ function close360View() {
 }
 
 function fitCompanyWindow() {
+    if (!companyRoot || !companySvg || !companyZoom || !companyContainer) return;
+    const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
+    if (!w || !h) return;
     const CW = NODE_W, CH = NODE_H;
     const allVisible = companyRoot.descendants();
     const maxDepth = d3.max(allVisible, n => n.depth) || 0;
@@ -6199,7 +6226,6 @@ function fitCompanyWindow() {
         maxY = Math.max(maxY, ny + CH / 2 + pad);
     });
 
-    const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
     const bw = maxX - minX || 1, bh = maxY - minY || 1;
     const scale = Math.max(Math.min(w / bw, h / bh, 1.5) * 0.88, 2);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
