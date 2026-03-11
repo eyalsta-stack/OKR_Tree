@@ -841,6 +841,13 @@
         .user-pill .pill-role.admin { background: rgba(155,48,255,0.2); color: #c084fc; }
         .user-pill .pill-role.manager { background: rgba(74,222,128,0.15); color: #4ade80; }
         .user-pill .pill-role.spectator { background: rgba(139,143,168,0.15); color: #8b8fa8; }
+        .user-pill .pill-pending-badge {
+            position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; padding: 0 4px;
+            background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 8px;
+            display: none; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--surface);
+        }
+        .user-pill .pill-pending-badge.visible { display: flex; }
+        .user-pill { position: relative; }
 
         .settings-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -1003,6 +1010,7 @@
         <button class="btn btn-sm" onclick="copyShareLink()" title="Copy shareable link">Share link</button>
         <div class="user-pill" id="userPill" onclick="openSettings()" style="display:none" title="Account & Settings">
             <div class="pill-avatar" id="pillAvatar"></div>
+            <span class="pill-pending-badge" id="pillPendingBadge" aria-label="Pending registrations">0</span>
             <span class="pill-name" id="pillName"></span>
             <span class="pill-role" id="pillRole"></span>
         </div>
@@ -1595,6 +1603,12 @@ Timeline</div>
 const ADMIN_EMAIL = 'eyalsta@payoneer.com';
 const ADMIN_PW    = 'Arthur82$$';
 
+// Optional: set both to sync users (registrations + approvals) across devices. Create table in Supabase SQL:
+// create table payokr_users (email text primary key, name text, password_hash text, role text, status text);
+// Then enable RLS and add policy: allow all for anon (or restrict as needed).
+const PAYOKR_SUPABASE_URL = '';      // e.g. https://xxxxx.supabase.co
+const PAYOKR_SUPABASE_ANON_KEY = ''; // anon key from Supabase project settings
+
 let currentUserRole = null;
 let currentUserEmail = null;
 let authMode = 'signin';
@@ -1622,24 +1636,93 @@ async function getAdminHash() {
     return _adminHash;
 }
 
-async function getUsers() {
-    let users = {};
-    const raw = localStorage.getItem('payokr_users');
-    if (raw) users = JSON.parse(raw);
-    const adminHash = await getAdminHash();
-    if (!users[ADMIN_EMAIL] || users[ADMIN_EMAIL].passwordHash !== adminHash) {
-        users[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: adminHash, role: 'admin', status: 'approved' };
-        localStorage.setItem('payokr_users', JSON.stringify(users));
-    }
-    // Backwards compat: users without status are approved
-    Object.keys(users).forEach(email => {
-        if (!users[email].status) users[email].status = 'approved';
+function isSupabaseConfigured() {
+    return !!(PAYOKR_SUPABASE_URL && PAYOKR_SUPABASE_ANON_KEY);
+}
+
+async function getUsersFromSupabase() {
+    const url = PAYOKR_SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/payokr_users?select=*';
+    const r = await fetch(url, {
+        headers: {
+            'apikey': PAYOKR_SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + PAYOKR_SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+        }
+    });
+    if (!r.ok) throw new Error('Supabase fetch failed');
+    const rows = await r.json();
+    const users = {};
+    rows.forEach(row => {
+        users[row.email] = {
+            name: row.name || row.email.split('@')[0],
+            passwordHash: row.password_hash,
+            role: row.role || 'spectator',
+            status: row.status || 'approved'
+        };
     });
     return users;
 }
 
-function saveUsers(users) {
+async function saveUsersToSupabase(users) {
+    const url = PAYOKR_SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/payokr_users?on_conflict=email';
+    const body = Object.entries(users).map(([email, u]) => ({
+        email,
+        name: u.name || email.split('@')[0],
+        password_hash: u.passwordHash,
+        role: u.role || 'spectator',
+        status: u.status || 'approved'
+    }));
+    const r = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'apikey': PAYOKR_SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + PAYOKR_SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error('Supabase save failed');
+}
+
+async function getUsers() {
+    let users = {};
+    if (isSupabaseConfigured()) {
+        try {
+            users = await getUsersFromSupabase();
+        } catch (e) {
+            console.warn('Supabase getUsers failed, using localStorage', e);
+            const raw = localStorage.getItem('payokr_users');
+            if (raw) users = JSON.parse(raw);
+        }
+    } else {
+        const raw = localStorage.getItem('payokr_users');
+        if (raw) users = JSON.parse(raw);
+    }
+    const adminHash = await getAdminHash();
+    if (!users[ADMIN_EMAIL] || users[ADMIN_EMAIL].passwordHash !== adminHash) {
+        users[ADMIN_EMAIL] = { name: 'Eyal Stavans', passwordHash: adminHash, role: 'admin', status: 'approved' };
+        if (isSupabaseConfigured()) {
+            try { await saveUsersToSupabase(users); } catch (_) {}
+        }
+        localStorage.setItem('payokr_users', JSON.stringify(users));
+    }
+    Object.keys(users).forEach(email => {
+        if (!users[email].status) users[email].status = 'approved';
+    });
     localStorage.setItem('payokr_users', JSON.stringify(users));
+    return users;
+}
+
+async function saveUsers(users) {
+    localStorage.setItem('payokr_users', JSON.stringify(users));
+    if (isSupabaseConfigured()) {
+        try {
+            await saveUsersToSupabase(users);
+        } catch (e) {
+            console.warn('Supabase saveUsers failed', e);
+        }
+    }
 }
 
 function getInitials(name, email) {
@@ -1679,6 +1762,30 @@ function applyRoleUI() {
     }
 }
 
+function updatePendingBadgeSync(users) {
+    if (!users) return;
+    const badge = document.getElementById('pillPendingBadge');
+    if (!badge) return;
+    if (!hasPermission('manageUsers')) {
+        badge.classList.remove('visible');
+        return;
+    }
+    const pending = Object.keys(users).filter(e => users[e].status === 'pending');
+    if (pending.length > 0) {
+        badge.textContent = pending.length > 99 ? '99+' : String(pending.length);
+        badge.classList.add('visible');
+    } else {
+        badge.classList.remove('visible');
+    }
+}
+
+async function updatePendingBadge() {
+    try {
+        const users = await getUsers();
+        updatePendingBadgeSync(users);
+    } catch (_) {}
+}
+
 async function loginUser(email) {
     const users = await getUsers();
     const user = users[email.toLowerCase()];
@@ -1688,6 +1795,7 @@ async function loginUser(email) {
     sessionStorage.setItem('payokr_user', currentUserEmail);
     document.getElementById('authScreen').classList.add('hidden');
     applyRoleUI();
+    updatePendingBadgeSync(users);
 }
 
 async function restoreSession() {
@@ -1740,11 +1848,11 @@ window.authSubmit = async function() {
         const isFirst = Object.keys(users).length === 0;
         if (isFirst) {
             users[email] = { name: email.split('@')[0], passwordHash: hash, role: 'admin', status: 'approved' };
-            saveUsers(users);
+            await saveUsers(users);
             await loginUser(email);
         } else {
             users[email] = { name: email.split('@')[0], passwordHash: hash, role: 'spectator', status: 'pending' };
-            saveUsers(users);
+            await saveUsers(users);
             document.getElementById('authError').innerHTML = '<span style="color:#4ade80">Registration successful. An admin will review your account and assign your role. You can sign in once approved.</span>';
             toggleAuthMode();
         }
@@ -1784,6 +1892,7 @@ window.openSettings = async function() {
     const usersTab = document.querySelector('.settings-tab[data-tab="users"]');
     if (usersTab) usersTab.style.display = hasPermission('manageUsers') ? '' : 'none';
     if (!hasPermission('manageUsers') && _settingsTab === 'users') _settingsTab = 'account';
+    await updatePendingBadge();
     switchSettingsTab(_settingsTab);
 };
 
@@ -1869,10 +1978,16 @@ window.switchSettingsTab = async function(tab) {
                 </div>`;
             });
         }
+        const syncNote = !isSupabaseConfigured() && isAdmin ? `
+            <p class="settings-sync-note" style="margin-top:1rem;padding:0.6rem 0.8rem;background:var(--surface2);border-radius:8px;font-size:0.75rem;color:var(--text-muted);line-height:1.4">
+                <strong>Why can't I see registration requests?</strong> Users are stored in this browser only. To see registrations from other devices, set <code>PAYOKR_SUPABASE_URL</code> and <code>PAYOKR_SUPABASE_ANON_KEY</code> in the app code and create a <code>payokr_users</code> table in Supabase (see comment in code).
+            </p>
+        ` : '';
         body.innerHTML = `
             <div class="settings-section-title">${approved.length} User${approved.length !== 1 ? 's' : ''}</div>
             ${approvedRows}
             ${pendingRows ? `<div class="settings-section-title" style="margin-top:1rem">${pending.length} Pending Approval</div>${pendingRows}` : ''}
+            ${syncNote}
         `;
     }
 };
@@ -1880,7 +1995,19 @@ window.switchSettingsTab = async function(tab) {
 window.changeUserRole = async function(email, newRole) {
     if (!hasPermission('manageUsers')) return;
     const users = await getUsers();
-    if (users[email]) { users[email].role = newRole; saveUsers(users); }
+    if (users[email]) { users[email].role = newRole; await saveUsers(users); }
+    switchSettingsTab('users');
+};
+
+window.approveUser = async function(email) {
+    if (!hasPermission('manageUsers')) return;
+    const users = await getUsers();
+    if (!users[email]) return;
+    const sel = document.getElementById('pendingRole-' + email.replace(/[@.]/g, '_'));
+    if (sel) users[email].role = sel.value;
+    users[email].status = 'approved';
+    await saveUsers(users);
+    updatePendingBadgeSync(users);
     switchSettingsTab('users');
 };
 
@@ -1889,7 +2016,8 @@ window.removeUser = async function(email) {
     if (!confirm('Remove this user?')) return;
     const users = await getUsers();
     delete users[email];
-    saveUsers(users);
+    await saveUsers(users);
+    updatePendingBadgeSync(users);
     switchSettingsTab('users');
 };
 
