@@ -2170,17 +2170,30 @@ function ensureD3(callback) {
         return;
     }
     const urls = [
-        'https://cdn.jsdelivr.net/npm/d3@7',
-        'https://unpkg.com/d3@7'
+        'https://raw.githubusercontent.com/eyalsta-stack/OKR_Tree/main/d3.min.js',
+        'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js',
+        'https://unpkg.com/d3@7/dist/d3.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js'
     ];
+    const openInNewTab = 'https://htmlpreview.github.io/?https://raw.githubusercontent.com/eyalsta-stack/OKR_Tree/main/okr-builder.html';
+    const fallbackHtml = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:2rem;text-align:center;color:#e8eaf0;font-family:system-ui,sans-serif;background:#0c0e14"><p style="font-size:1.1rem;margin-bottom:0.5rem">D3.js could not be loaded from any CDN.</p><p style="color:#8b8fa8;font-size:0.9rem;margin-bottom:1.5rem">This often happens when the app runs inside a preview iframe.</p><a href="' + openInNewTab + '" target="_blank" rel="noopener" style="display:inline-block;padding:0.6rem 1.2rem;background:#9b30ff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Open app in new tab</a><p style="color:#6b7280;font-size:0.8rem;margin-top:1rem">Then use the app in that tab.</p></div>';
+    function waitForD3(done) {
+        let attempts = 0;
+        const t = setInterval(function() {
+            if (typeof d3 !== 'undefined') { clearInterval(t); done(); return; }
+            if (++attempts > 100) { clearInterval(t); done(false); }
+        }, 50);
+    }
     function tryLoad(i) {
         if (i >= urls.length) {
-            document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:2rem;text-align:center;color:#e8eaf0;font-family:system-ui,sans-serif"><p style="font-size:1.1rem;margin-bottom:0.5rem">D3.js could not be loaded</p><p style="color:#8b8fa8;font-size:0.9rem">Try opening <a href="https://raw.githubusercontent.com/eyalsta-stack/OKR_Tree/main/okr-builder.html" style="color:#9b30ff">okr-builder.html</a> in a new tab, or check your network.</p></div>';
+            document.body.innerHTML = fallbackHtml;
             return;
         }
         const script = document.createElement('script');
         script.src = urls[i];
-        script.onload = () => callback();
+        script.onload = function() {
+            waitForD3(function(ok) { if (ok) callback(); else tryLoad(i + 1); });
+        };
         script.onerror = () => tryLoad(i + 1);
         document.head.appendChild(script);
     }
@@ -5460,7 +5473,8 @@ function renderCompanyTree() {
     }
 
     if (typeof d3 === 'undefined') {
-        companyContainer.innerHTML = '<div class="company-empty-state"><div>D3.js did not load.</div><p style="font-size:0.85rem;margin-top:0.5rem;color:var(--text-muted)">Open the app in your browser (not in a preview iframe) or check your connection.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="showGalleryView()">Open gallery</button></div>';
+        const openUrl = 'https://htmlpreview.github.io/?https://raw.githubusercontent.com/eyalsta-stack/OKR_Tree/main/okr-builder.html';
+        companyContainer.innerHTML = '<div class="company-empty-state"><div>D3.js did not load.</div><p style="font-size:0.85rem;margin-top:0.5rem;color:var(--text-muted)">Open the app in a new tab so scripts can run.</p><a href="' + openUrl + '" target="_blank" rel="noopener" class="btn btn-primary" style="margin-top:1rem;display:inline-block;text-decoration:none;padding:0.5rem 1rem">Open app in new tab</a><button class="btn btn-sm" style="margin-top:0.5rem;margin-left:0.5rem" onclick="showGalleryView()">Open gallery</button></div>';
         return;
     }
     try {
