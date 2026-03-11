@@ -2163,14 +2163,39 @@ function installCanvasWheelCapture() {
     document.addEventListener('wheel', onWheel, { passive: false });
 }
 
+// Load D3 if not already loaded (fixes "D3.js did not load" when CDN is blocked or in iframes)
+function ensureD3(callback) {
+    if (typeof d3 !== 'undefined') {
+        callback();
+        return;
+    }
+    const urls = [
+        'https://cdn.jsdelivr.net/npm/d3@7',
+        'https://unpkg.com/d3@7'
+    ];
+    function tryLoad(i) {
+        if (i >= urls.length) {
+            document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:2rem;text-align:center;color:#e8eaf0;font-family:system-ui,sans-serif"><p style="font-size:1.1rem;margin-bottom:0.5rem">D3.js could not be loaded</p><p style="color:#8b8fa8;font-size:0.9rem">Try opening <a href="https://raw.githubusercontent.com/eyalsta-stack/OKR_Tree/main/okr-builder.html" style="color:#9b30ff">okr-builder.html</a> in a new tab, or check your network.</p></div>';
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = urls[i];
+        script.onload = () => callback();
+        script.onerror = () => tryLoad(i + 1);
+        document.head.appendChild(script);
+    }
+    tryLoad(0);
+}
+
 // Init
 window.addEventListener('DOMContentLoaded', () => {
-    installCanvasWheelCapture();
-    const savedKey = localStorage.getItem('okr_api_key');
-    if (savedKey) document.getElementById('apiKey').value = savedKey;
-    // Brief delay so layout is ready (fixes empty canvas when opened via iframe/htmlpreview)
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => showCompanyView());
+    ensureD3(() => {
+        installCanvasWheelCapture();
+        const savedKey = localStorage.getItem('okr_api_key');
+        if (savedKey) document.getElementById('apiKey').value = savedKey;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => showCompanyView());
+        });
     });
 });
 
