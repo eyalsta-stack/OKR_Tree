@@ -5508,11 +5508,16 @@ function _renderCompanyTreeCore(companyData) {
     const safeData = { name: companyData.name || 'Company', type: 'company', children: companyData.children || [] };
     companyRoot = d3.hierarchy(safeData);
     companyRoot.x0 = 0; companyRoot.y0 = 0;
-    const openToSubDept = new Set(['company', 'department']);
     companyRoot.descendants().forEach((d, i) => {
         d.id = i;
-        if (openToSubDept.has(d.data.type)) {
+        if (d.data.type === 'company') {
             if (d._children) { d.children = d._children; d._children = null; }
+        } else if (d.data.type === 'department') {
+            if (d._children) { d.children = d._children; d._children = null; }
+            else if (d.children && d.children.length) {
+                d._children = d.children;
+                d.children = d.children.filter(c => c.data && c.data.type === 'subdepartment');
+            }
         } else {
             if (d.children) { d._children = d.children; d.children = null; }
         }
