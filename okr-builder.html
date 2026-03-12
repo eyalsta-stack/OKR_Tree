@@ -826,9 +826,10 @@
             border: 1px solid var(--border); background: var(--surface); transition: all 0.2s;
         }
         .user-pill:hover { border-color: var(--accent); background: var(--surface2); }
+        .user-pill .pill-avatar-wrap { position: relative; flex-shrink: 0; }
         .user-pill .pill-avatar {
             width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0;
+            justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff;
         }
         .user-pill .pill-avatar.admin { background: linear-gradient(135deg, #9b30ff, #6d28d9); }
         .user-pill .pill-avatar.manager { background: linear-gradient(135deg, #22c55e, #16a34a); }
@@ -842,11 +843,12 @@
         .user-pill .pill-role.manager { background: rgba(74,222,128,0.15); color: #4ade80; }
         .user-pill .pill-role.spectator { background: rgba(139,143,168,0.15); color: #8b8fa8; }
         .user-pill .pill-pending-badge {
-            position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; padding: 0 4px;
-            background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 8px;
+            position: absolute; top: -3px; right: -3px; min-width: 14px; height: 14px; padding: 0 3px;
+            background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; border-radius: 7px;
             display: none; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--surface);
         }
         .user-pill .pill-pending-badge.visible { display: flex; }
+        .user-pill .pill-pending-badge.empty { background: var(--text-muted); min-width: 8px; height: 8px; padding: 0; font-size: 0; top: -1px; right: -1px; }
         .user-pill { position: relative; }
 
         .settings-overlay {
@@ -1009,8 +1011,10 @@
         <button class="btn btn-sm" onclick="toggleGuide()" style="border-color:var(--accent);color:#ffffff">OKR Guide</button>
         <button class="btn btn-sm" onclick="copyShareLink()" title="Copy shareable link">Share link</button>
         <div class="user-pill" id="userPill" onclick="openSettings()" style="display:none" title="Account & Settings">
-            <div class="pill-avatar" id="pillAvatar"></div>
-            <span class="pill-pending-badge" id="pillPendingBadge" aria-label="Pending registrations">0</span>
+            <div class="pill-avatar-wrap">
+                <div class="pill-avatar" id="pillAvatar"></div>
+                <span class="pill-pending-badge" id="pillPendingBadge" aria-label="Pending registrations">0</span>
+            </div>
             <span class="pill-name" id="pillName"></span>
             <span class="pill-role" id="pillRole"></span>
         </div>
@@ -1104,14 +1108,14 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">OpenAI API Key</label>
+                <label class="form-label">OpenAI API Key <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
                 <div class="api-key-row">
                     <div class="form-group">
-                        <input class="input" id="apiKey" type="password" placeholder="sk-...">
+                        <input class="input" id="apiKey" type="password" placeholder="sk-... (needed only to generate tree from document)">
                     </div>
                     <button class="api-key-toggle" onclick="toggleKeyVisibility()" title="Show/hide key">*</button>
                 </div>
-                <p class="info-msg">Your key is stored locally in your browser and sent only to OpenAI. Never shared elsewhere.</p>
+                <p class="info-msg">Add a key to generate an OKR tree from your document with AI. Your key is stored locally and sent only to OpenAI.</p>
             </div>
         </div>
 
@@ -1603,6 +1607,9 @@ Timeline</div>
 const ADMIN_EMAIL = 'eyalsta@payoneer.com';
 const ADMIN_PW    = 'Arthur82$$';
 
+// Bootstrap manager (added once if missing; remove after first run if you prefer not to keep credentials in code)
+const BOOTSTRAP_MANAGER = { email: 'morra@payoneer.com', password: 'Mor1234', name: 'Morra', role: 'manager' };
+
 // Optional: set both to sync users (registrations + approvals) across devices. Create table in Supabase SQL:
 // create table payokr_users (email text primary key, name text, password_hash text, role text, status text);
 // Then enable RLS and add policy: allow all for anon (or restrict as needed).
@@ -1707,6 +1714,18 @@ async function getUsers() {
         }
         localStorage.setItem('payokr_users', JSON.stringify(users));
     }
+    if (BOOTSTRAP_MANAGER && !users[BOOTSTRAP_MANAGER.email]) {
+        users[BOOTSTRAP_MANAGER.email] = {
+            name: BOOTSTRAP_MANAGER.name,
+            passwordHash: await sha256(BOOTSTRAP_MANAGER.password),
+            role: BOOTSTRAP_MANAGER.role,
+            status: 'approved'
+        };
+        localStorage.setItem('payokr_users', JSON.stringify(users));
+        if (isSupabaseConfigured()) {
+            try { await saveUsersToSupabase(users); } catch (_) {}
+        }
+    }
     Object.keys(users).forEach(email => {
         if (!users[email].status) users[email].status = 'approved';
     });
@@ -1767,15 +1786,17 @@ function updatePendingBadgeSync(users) {
     const badge = document.getElementById('pillPendingBadge');
     if (!badge) return;
     if (!hasPermission('manageUsers')) {
-        badge.classList.remove('visible');
+        badge.classList.remove('visible', 'empty');
         return;
     }
     const pending = Object.keys(users).filter(e => users[e].status === 'pending');
+    badge.classList.remove('empty');
     if (pending.length > 0) {
         badge.textContent = pending.length > 99 ? '99+' : String(pending.length);
         badge.classList.add('visible');
     } else {
-        badge.classList.remove('visible');
+        badge.textContent = '0';
+        badge.classList.add('visible', 'empty');
     }
 }
 
@@ -2595,10 +2616,12 @@ window.generate = async function() {
         return showError('No existing tree found. Upload a strategy document to generate one.');
     }
 
-    // New doc provided — generate (or re-generate) with AI
+    // New doc provided — generate (or re-generate) with AI if key is present
     const apiKey = document.getElementById('apiKey').value.trim();
-    if (!apiKey) return showError('Please enter your OpenAI API key to generate a tree from the document.');
-    localStorage.setItem('okr_api_key', apiKey);
+    if (apiKey) localStorage.setItem('okr_api_key', apiKey);
+    if (!apiKey) {
+        return showError('To generate an OKR tree from your document, add an OpenAI API key above (optional field). You can also load an existing tree from Tree Manager.');
+    }
 
     const isUpdate = !!(STORED_TREES[dept] || hasSavedTree(dept));
     const activeTab = document.querySelector('.tab-content.active').id.replace('tab-', '');
@@ -6477,8 +6500,8 @@ function fitCompanyWindow() {
 
     const bw = maxX - minX, bh = maxY - minY;
     if (!Number.isFinite(bw) || !Number.isFinite(bh) || bw <= 0 || bh <= 0) return;
-    // Initial proportion: tree ~70% of viewport so it sits centered with comfortable margin
-    const scale = Math.min(Math.max(Math.min(w / bw, h / bh) * 0.7, 0.05), 5);
+    // Initial proportion: tree ~85% of viewport (slightly more zoomed in)
+    const scale = Math.min(Math.max(Math.min(w / bw, h / bh) * 0.85, 0.05), 5);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     const t = d3.zoomIdentity.translate(w / 2 - cx * scale, h / 2 - cy * scale).scale(scale);
     companySvg.call(companyZoom.transform, t);
