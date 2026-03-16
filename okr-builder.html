@@ -227,9 +227,10 @@
         .tree-dashboard-toggle:hover { color: #c084ff; }
         .tree-dashboard-body { padding: 10px 14px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; }
         .tree-dashboard-stat { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 4px 0; flex: 1 1 0; min-width: 0; }
+        .tree-dashboard-stat:first-child { min-width: 150px; }
         .tree-dashboard-stat:not(:last-child) { border-right: 1px solid rgba(155,48,255,0.3); padding-right: 14px; margin-right: 12px; }
         .tree-dashboard-stat-label { font-size: 0.68rem; font-weight: 600; color: #9b30ff; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
-        .tree-dashboard-stat-values { display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0; }
+        .tree-dashboard-stat-values { display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0; white-space: nowrap; }
         .tree-dashboard-stat .dash-pair { display: inline-flex; align-items: baseline; gap: 3px; }
         .tree-dashboard-stat .dash-sep { color: rgba(155,48,255,0.5); font-weight: 600; font-size: 0.7rem; margin: 0 2px; user-select: none; }
         .tree-dashboard-stat .dash-num { font-size: 1.15rem; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
@@ -1594,6 +1595,13 @@
             <div style="display:flex;gap:0.4rem;align-items:center">
                 <input type="url" id="emLink" placeholder="https://dev.azure.com/..." style="flex:1">
                 <a id="emLinkOpen" href="#" target="_blank" style="display:none;color:var(--accent);font-size:0.75rem;white-space:nowrap;text-decoration:none" title="Open link">&#8599; Open</a>
+            </div>
+        </div>
+        <div class="em-field" id="emProgressField" style="display:none">
+            <label>Progress</label>
+            <div style="display:flex;gap:0.5rem;align-items:center">
+                <input type="range" id="emProgress" min="0" max="100" value="0" style="flex:1;max-width:200px" title="How much of the initiative is finished" oninput="var v=document.getElementById('emProgressValue');if(v)v.textContent=this.value+'%'">
+                <span id="emProgressValue" style="font-size:0.85rem;font-weight:600;color:var(--text);min-width:2.5rem">0%</span>
             </div>
         </div>
         <div class="em-actions">
@@ -5458,6 +5466,19 @@ function update(source) {
             return '\u{1F517} shared';
         });
 
+    const progressBarW = NODE_W - 24;
+    const progressBarX = -NODE_W / 2 + 12;
+    const progressBarY = NODE_H / 2 - 5;
+    clipped.filter(d => d.data.type === 'initiative').append('rect').attr('class', 'node-progress-track')
+        .attr('x', progressBarX).attr('y', progressBarY).attr('width', progressBarW).attr('height', 4)
+        .attr('rx', 2).attr('ry', 2)
+        .attr('fill', 'rgba(255,255,255,0.08)');
+    clipped.filter(d => d.data.type === 'initiative').append('rect').attr('class', 'node-progress-fill')
+        .attr('x', progressBarX).attr('y', progressBarY).attr('height', 4)
+        .attr('rx', 2).attr('ry', 2)
+        .attr('fill', 'rgba(155,48,255,0.7)')
+        .attr('width', d => Math.max(0, Math.min(100, parseInt(d.data.progress, 10) || 0)) / 100 * progressBarW);
+
     clipped.filter(d => d._children || d.children).append('text').attr('class', 'expand-indicator')
         .attr('text-anchor', 'end').attr('x', NODE_W / 2 - 10).attr('dominant-baseline', 'central')
         .attr('font-size', '11px').attr('cursor', 'pointer')
@@ -5585,6 +5606,10 @@ function showTooltip(event, d) {
     }
     if (d.data.timeline) html += `<div class="tooltip-meta">Timeline: ${d.data.timeline}</div>`;
     if (d.data.link) html += `<div class="tooltip-meta" style="margin-top:0.3rem"><a href="${escapeHtml(d.data.link)}" target="_blank" style="color:#38bdf8;text-decoration:none;font-size:0.7rem">&#8599; Azure DevOps</a></div>`;
+    if (d.data.type === 'initiative' && (d.data.progress != null && d.data.progress !== '')) {
+        const pct = Math.min(100, Math.max(0, parseInt(d.data.progress, 10) || 0));
+        html += `<div class="tooltip-meta">Progress: <strong>${pct}%</strong></div>`;
+    }
     if ((d.data.sharedWith && d.data.sharedWith.length > 0) || (d.data.similarSharedWith && d.data.similarSharedWith.length > 0) || (d.data.sharedDepts && d.data.sharedDepts.length > 0)) {
         html += `<div style="margin-top:0.5rem;border:1px solid #22d3ee33;border-radius:8px;overflow:hidden;background:rgba(34,211,238,0.04)">`;
         html += `<div style="padding:6px 10px;background:rgba(34,211,238,0.08);border-bottom:1px solid #22d3ee22;display:flex;align-items:center;gap:5px"><span style="color:#22d3ee;font-size:0.7rem;font-weight:700;letter-spacing:0.3px">&#128279; CROSS-DEPARTMENT</span></div>`;
@@ -5881,6 +5906,15 @@ function openEditModal(event, d, isCompany) {
         el.style.display = isOrgNode ? 'none' : '';
     });
     document.getElementById('emLinkField').style.display = (!isOrgNode && data.type === 'initiative') ? '' : 'none';
+    const isInitiative = !isOrgNode && data.type === 'initiative';
+    document.getElementById('emProgressField').style.display = isInitiative ? '' : 'none';
+    if (isInitiative) {
+        const pct = Math.min(100, Math.max(0, parseInt(data.progress, 10) || 0));
+        const progressInput = document.getElementById('emProgress');
+        const progressValue = document.getElementById('emProgressValue');
+        progressInput.value = pct;
+        if (progressValue) progressValue.textContent = pct + '%';
+    }
 
     const coSelect = document.getElementById('emCompanyOkr');
     if (coSelect) {
@@ -5937,6 +5971,11 @@ window.saveEditModal = function() {
     data.companyOkr = document.getElementById('emCompanyOkr').value || undefined;
     data.timeline = document.getElementById('emTimeline').value.trim() || undefined;
     data.link = document.getElementById('emLink').value.trim() || undefined;
+    if (data.type === 'initiative') {
+        const p = document.getElementById('emProgress');
+        const v = p ? parseInt(p.value, 10) : 0;
+        data.progress = (v >= 0 && v <= 100) ? v : undefined;
+    }
     const wasCompany = editingIsCompany;
     closeEditModal();
     if (wasCompany && companyRoot) {
@@ -6711,6 +6750,14 @@ function updateCompanyTree(source) {
         .attr('font-size', '6.5px').attr('font-weight', '600').attr('letter-spacing', '0.3px')
         .attr('fill', '#22d3ee')
         .text(d => '\u{1F517} ' + d.data.sharedWith.length + ' shared');
+    const coProgressW = CW - 24, coProgressX = -CW / 2 + 12, coProgressY = CH / 2 - 5;
+    coClipped.filter(d => d.data.type === 'initiative').append('rect').attr('class', 'node-progress-track')
+        .attr('x', coProgressX).attr('y', coProgressY).attr('width', coProgressW).attr('height', 4)
+        .attr('rx', 2).attr('ry', 2).attr('fill', 'rgba(255,255,255,0.08)');
+    coClipped.filter(d => d.data.type === 'initiative').append('rect').attr('class', 'node-progress-fill')
+        .attr('x', coProgressX).attr('y', coProgressY).attr('height', 4).attr('rx', 2).attr('ry', 2)
+        .attr('fill', 'rgba(155,48,255,0.7)')
+        .attr('width', d => Math.max(0, Math.min(100, parseInt(d.data.progress, 10) || 0)) / 100 * coProgressW);
     coClipped.append('text').attr('class', 'expand-indicator')
         .attr('text-anchor', 'end').attr('x', CW / 2 - 10).attr('dominant-baseline', 'central')
         .attr('font-size', '11px');
