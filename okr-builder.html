@@ -506,40 +506,80 @@
 
         /* SHARED DEPARTMENTS PANEL */
         .shared-depts-overlay {
-            position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.4);
+            position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5);
             display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
         }
         .shared-depts-overlay.open { display: flex; }
         .shared-depts-panel {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-            min-width: 320px; max-width: 420px; max-height: 80vh; overflow: hidden;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+            min-width: 400px; max-width: 560px; width: 90vw; max-height: 85vh; overflow: hidden;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
         }
         .shared-depts-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
             background: var(--bg);
         }
-        .shared-depts-header h3 { font-size: 0.9rem; margin: 0; color: var(--accent); }
+        .shared-depts-header h3 { font-size: 0.95rem; margin: 0; color: #22d3ee; display: flex; align-items: center; gap: 0.4rem; }
         .shared-depts-close {
             background: none; border: none; color: var(--text-muted);
             font-size: 1.4rem; cursor: pointer; padding: 0 0.25rem; line-height: 1;
         }
         .shared-depts-close:hover { color: var(--text); }
-        .shared-depts-objective {
-            padding: 10px 16px; font-size: 0.85rem; font-weight: 600; color: var(--text);
-            border-bottom: 1px solid var(--border);
+        .shared-depts-origin {
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            background: rgba(34,211,238,0.04);
         }
-        .shared-depts-list {
-            padding: 12px 16px; margin: 0; list-style: none; max-height: 300px; overflow-y: auto;
+        .shared-depts-origin-type {
+            display: inline-block; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px;
         }
-        .shared-depts-list li {
-            padding: 8px 12px; margin-bottom: 4px; background: rgba(34,211,238,0.08);
-            border-radius: 6px; font-size: 0.75rem; color: var(--text);
+        .shared-depts-origin-name {
+            font-size: 0.9rem; font-weight: 600; color: var(--text); line-height: 1.3;
+        }
+        .shared-depts-origin-detail {
+            font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;
+        }
+        .shared-depts-body {
+            flex: 1; overflow-y: auto; padding: 0;
+        }
+        .shared-depts-section {
+            padding: 12px 20px;
+        }
+        .shared-depts-section + .shared-depts-section {
+            border-top: 1px solid var(--border);
+        }
+        .shared-depts-section-title {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 0.4rem;
+        }
+        .shared-depts-card {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 14px; margin-bottom: 8px; transition: border-color 0.15s;
             border-left: 3px solid #22d3ee;
         }
-        .shared-depts-similar { padding: 12px 16px; border-top: 1px solid var(--border); }
-        .shared-depts-similar-title { font-size: 0.7rem; font-weight: 600; color: #a78bfa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .shared-depts-card:hover { border-color: #22d3ee55; }
+        .shared-depts-card.similar { border-left-color: #a78bfa; }
+        .shared-depts-card.similar:hover { border-color: #a78bfa55; }
+        .shared-depts-card-dept {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+            margin-bottom: 4px; display: flex; align-items: center; gap: 0.3rem;
+        }
+        .shared-depts-card-name {
+            font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.3;
+        }
+        .shared-depts-card-detail {
+            font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;
+        }
+        .shared-depts-card-match {
+            display: inline-block; font-size: 0.6rem; font-weight: 600; padding: 2px 6px;
+            border-radius: 3px; margin-top: 6px;
+        }
+        .shared-depts-empty-msg {
+            font-size: 0.75rem; color: var(--text-muted); padding: 8px 0; font-style: italic;
+        }
 
         /* SUGGESTION PANEL */
         .suggestion-bar {
@@ -1335,15 +1375,11 @@
 <div class="shared-depts-overlay" id="sharedDeptsOverlay" onclick="if(event.target===this)closeSharedDeptsPanel()">
     <div class="shared-depts-panel" onclick="event.stopPropagation()">
         <div class="shared-depts-header">
-            <h3>\u{1F517} Shared with sub-departments</h3>
+            <h3>&#128279; Cross-Department Connections</h3>
             <button class="shared-depts-close" onclick="closeSharedDeptsPanel()">&times;</button>
         </div>
-        <div class="shared-depts-objective" id="sharedDeptsObjectiveName"></div>
-        <ul class="shared-depts-list" id="sharedDeptsList"></ul>
-        <div class="shared-depts-similar" id="sharedDeptsSimilar" style="display:none">
-            <div class="shared-depts-similar-title">Similar objectives in:</div>
-            <ul class="shared-depts-list" id="sharedDeptsSimilarList"></ul>
-        </div>
+        <div class="shared-depts-origin" id="sharedDeptsOrigin"></div>
+        <div class="shared-depts-body" id="sharedDeptsBody"></div>
     </div>
 </div>
 
@@ -2080,14 +2116,14 @@ const TYPE_STYLES = { company: { bg: "#000000", borderW: 1.4 }, department: { bg
 const TYPE_LABELS = { company: "COMPANY", department: "DEPARTMENT", subdepartment: "SUB-DEPARTMENT", initiative: "INITIATIVE", objective: "OBJECTIVE", kr: "KEY RESULT" };
 
 const DEPT_COLORS = {
-    "FEF": "#9b30ff", "FEF - Communications": "#22d3ee", "FEF - Baseline / Aurora": "#8b5cf6", "FEF - Baseline": "#4ade80", "FEF - Reports": "#c084fc",
+    "FEF": "#9b30ff", "FEF - Communications": "#22d3ee", "FEF - Baseline / Aurora": "#8b5cf6", "FEF - Reports": "#c084fc",
     "FEF - Mobile": "#818cf8", "FEF - Pricing & Packaging": "#e879f9",
     "Money Movement": "#f59e0b", "Commercial Products": "#14b8a6",
     "Ecosystem": "#6366f1", "CLM": "#f472b6"
 };
 
 const SUB_DEPARTMENTS = {
-    "FEF": ["Communications", "Baseline / Aurora", "Baseline", "Reports", "Mobile", "Pricing & Packaging"],
+    "FEF": ["Communications", "Baseline / Aurora", "Reports", "Mobile", "Pricing & Packaging"],
     "Money Movement": [],
     "Commercial Products": [],
     "Ecosystem": [],
@@ -5357,46 +5393,82 @@ window.saveCurrentTree = function() {
 };
 
 // ─── SHARED DEPARTMENTS PANEL ───
+function findNodeInTree(treeData, name) {
+    if (!treeData) return null;
+    const key = name.trim().toLowerCase();
+    function walk(node) {
+        if ((node.name || '').trim().toLowerCase() === key) return node;
+        if (node.children) for (const c of node.children) { const r = walk(c); if (r) return r; }
+        return null;
+    }
+    return walk(treeData);
+}
+
 function openSharedDeptsPanel(d) {
     if (!d || !d.data) return;
     const sw = d.data.sharedWith || [];
     const sim = d.data.similarSharedWith || [];
-    const nameEl = document.getElementById('sharedDeptsObjectiveName');
-    const listEl = document.getElementById('sharedDeptsList');
-    if (!nameEl || !listEl) return;
-    nameEl.textContent = d.data.name || 'Objective';
-    listEl.innerHTML = '';
+    const originEl = document.getElementById('sharedDeptsOrigin');
+    const bodyEl = document.getElementById('sharedDeptsBody');
+    if (!originEl || !bodyEl) return;
+
+    const typeLabel = TYPE_LABELS[d.data.type] || d.data.type?.toUpperCase() || '';
+    const color = d.data.color || '#22d3ee';
+    originEl.innerHTML =
+        `<span class="shared-depts-origin-type" style="background:${color}22;color:${color};border:1px solid ${color}44">${escapeHtml(typeLabel)}</span>` +
+        (d.data.companyOkr ? `<span class="shared-depts-origin-type" style="background:${(COMPANY_OKRS[d.data.companyOkr]?.color || '#888')}22;color:${COMPANY_OKRS[d.data.companyOkr]?.light || '#ccc'};border:1px solid ${(COMPANY_OKRS[d.data.companyOkr]?.color || '#888')}44;margin-left:4px">${escapeHtml(d.data.companyOkr)}</span>` : '') +
+        `<div class="shared-depts-origin-name">${escapeHtml(d.data.name || 'Objective')}</div>` +
+        (d.data.detail ? `<div class="shared-depts-origin-detail">${escapeHtml(d.data.detail)}</div>` : '');
+
+    bodyEl.innerHTML = '';
+    const allTrees = getAllTrees();
+
     if (sw.length > 0) {
+        const section = document.createElement('div');
+        section.className = 'shared-depts-section';
+        section.innerHTML = `<div class="shared-depts-section-title" style="color:#22d3ee">&#128279; Exact match in ${sw.length} sub-department${sw.length > 1 ? 's' : ''}</div>`;
         sw.forEach(dept => {
-            const li = document.createElement('li');
-            li.textContent = dept;
-            listEl.appendChild(li);
+            const tree = allTrees.find(t => t.dept === dept);
+            const match = tree ? findNodeInTree(tree.data, d.data.name) : null;
+            const deptColor = DEPT_COLORS[dept] || '#22d3ee';
+            const card = document.createElement('div');
+            card.className = 'shared-depts-card';
+            card.innerHTML =
+                `<div class="shared-depts-card-dept" style="color:${deptColor}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${deptColor};margin-right:2px"></span> ${escapeHtml(dept)}</div>` +
+                `<div class="shared-depts-card-name">${escapeHtml(match?.name || d.data.name)}</div>` +
+                (match?.detail ? `<div class="shared-depts-card-detail">${escapeHtml(match.detail)}</div>` : '') +
+                `<span class="shared-depts-card-match" style="background:#22d3ee22;color:#22d3ee">Exact match</span>`;
+            section.appendChild(card);
         });
-    } else if (sim.length === 0) {
-        const li = document.createElement('li');
-        li.className = 'shared-depts-empty';
-        li.textContent = 'No other departments share this objective yet.';
-        li.style.borderLeftColor = 'var(--border)';
-        li.style.background = 'var(--bg)';
-        listEl.appendChild(li);
+        bodyEl.appendChild(section);
     }
-    const similarBlock = document.getElementById('sharedDeptsSimilar');
-    const similarList = document.getElementById('sharedDeptsSimilarList');
-    if (similarBlock && similarList) {
-        if (sim.length > 0) {
-            similarBlock.style.display = 'block';
-            similarList.innerHTML = '';
-            sim.forEach(item => {
-                const li = document.createElement('li');
-                li.textContent = typeof item === 'string' ? item : (item.dept || item.name || '');
-                li.style.borderLeftColor = '#a78bfa';
-                li.style.background = 'rgba(167,139,250,0.08)';
-                similarList.appendChild(li);
-            });
-        } else {
-            similarBlock.style.display = 'none';
-        }
+
+    if (sim.length > 0) {
+        const section = document.createElement('div');
+        section.className = 'shared-depts-section';
+        section.innerHTML = `<div class="shared-depts-section-title" style="color:#a78bfa">&#128268; Similar in ${sim.length} sub-department${sim.length > 1 ? 's' : ''}</div>`;
+        sim.forEach(item => {
+            const dept = typeof item === 'string' ? item : item.dept;
+            const matchName = typeof item === 'string' ? null : item.name;
+            const tree = allTrees.find(t => t.dept === dept);
+            const match = tree && matchName ? findNodeInTree(tree.data, matchName) : null;
+            const deptColor = DEPT_COLORS[dept] || '#a78bfa';
+            const card = document.createElement('div');
+            card.className = 'shared-depts-card similar';
+            card.innerHTML =
+                `<div class="shared-depts-card-dept" style="color:${deptColor}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${deptColor};margin-right:2px"></span> ${escapeHtml(dept)}</div>` +
+                `<div class="shared-depts-card-name">${escapeHtml(matchName || d.data.name)}</div>` +
+                (match?.detail ? `<div class="shared-depts-card-detail">${escapeHtml(match.detail)}</div>` : '') +
+                `<span class="shared-depts-card-match" style="background:#a78bfa22;color:#a78bfa">Similar objective</span>`;
+            section.appendChild(card);
+        });
+        bodyEl.appendChild(section);
     }
+
+    if (sw.length === 0 && sim.length === 0) {
+        bodyEl.innerHTML = `<div class="shared-depts-section"><div class="shared-depts-empty-msg">No other sub-departments share this objective yet.</div></div>`;
+    }
+
     const overlay = document.getElementById('sharedDeptsOverlay');
     if (overlay) overlay.classList.add('open');
 }
