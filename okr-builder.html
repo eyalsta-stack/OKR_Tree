@@ -5079,7 +5079,7 @@ function update(source) {
         .text(d => d.data.companyOkr);
 
     clipped.filter(d => (d.data.sharedWith && d.data.sharedWith.length > 0) || (d.data.similarSharedWith && d.data.similarSharedWith.length > 0)).append('text').attr('class', 'node-shared-badge')
-        .attr('text-anchor', 'end').attr('x', NODE_W / 2 - 10).attr('y', -NODE_H / 2 + 10)
+        .attr('text-anchor', 'start').attr('x', -NODE_W / 2 + 12).attr('y', NODE_H / 2 - 6)
         .attr('font-size', '7px').attr('font-weight', '600').attr('letter-spacing', '0.3px')
         .attr('cursor', 'pointer')
         .attr('fill', d => d.data.sharedWith && d.data.sharedWith.length > 0 ? '#22d3ee' : '#a78bfa')
@@ -6318,7 +6318,7 @@ function updateCompanyTree(source) {
         .attr('fill', '#ffffffaa')
         .text(d => d.data.companyOkr);
     coClipped.filter(d => d.data.sharedWith && d.data.sharedWith.length > 0).append('text').attr('class', 'node-shared-badge')
-        .attr('text-anchor', 'end').attr('x', CW / 2 - 10).attr('y', -CH / 2 + 10)
+        .attr('text-anchor', 'start').attr('x', -CW / 2 + 12).attr('y', CH / 2 - 6)
         .attr('font-size', '6.5px').attr('font-weight', '600').attr('letter-spacing', '0.3px')
         .attr('fill', '#22d3ee')
         .text(d => '\u{1F517} ' + d.data.sharedWith.length + ' shared');
