@@ -3730,6 +3730,10 @@ function updateCompanyDashboard(stats) {
 /** Company dashboard = sum of stats from all department trees (the data we already have). */
 function updateCompanyDashboardFromTrees() {
     const trees = getAllTrees();
+    // Annotate each tree with shared OKRs so joint count is correct (getAllTrees() returns fresh copies without annotation)
+    trees.forEach(t => {
+        if (t.data) annotateSharedOkrs(t.data, t.dept);
+    });
     const aggregated = { objectives: 0, objectivesJoint: 0, krs: 0, initiatives: 0 };
     trees.forEach(t => {
         if (!t.data) return;
