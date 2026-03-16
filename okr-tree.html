@@ -98,7 +98,7 @@
 
         #tree-container { width: 100%; height: calc(100vh - 90px); position: relative; }
         .tree-dashboard {
-            position: absolute; left: 16px; top: 90px; z-index: 40; min-width: 320px;
+            position: absolute; left: 16px; top: 90px; z-index: 40; min-width: 380px;
             background: rgba(15,23,42,0.96); border: 1px solid #9b30ff;
             border-radius: 10px;
             box-shadow: 0 0 16px rgba(155,48,255,0.25), 0 8px 24px rgba(0,0,0,0.4);
@@ -118,15 +118,15 @@
         .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: #9b30ff; letter-spacing: 0.5px; }
         .tree-dashboard-toggle { background: none; border: none; color: rgba(155,48,255,0.8); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; }
         .tree-dashboard-toggle:hover { color: #c084ff; }
-        .tree-dashboard-body { padding: 8px 12px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; }
-        .tree-dashboard-stat { display: flex; flex-direction: row; align-items: center; gap: 6px; padding: 4px 0; flex: 1; min-width: 0; }
-        .tree-dashboard-stat:not(:last-child) { border-right: 1px solid rgba(155,48,255,0.25); padding-right: 12px; margin-right: 10px; }
-        .tree-dashboard-stat-label { font-size: 0.65rem; font-weight: 600; color: #9b30ff; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
-        .tree-dashboard-stat-values { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-        .tree-dashboard-stat .dash-pair { display: inline-flex; align-items: center; gap: 4px; background: rgba(155,48,255,0.1); border: 1px solid rgba(155,48,255,0.25); border-radius: 6px; padding: 3px 8px; }
-        .tree-dashboard-stat .dash-pair-joint { background: rgba(155,48,255,0.06); border-color: rgba(155,48,255,0.2); }
-        .tree-dashboard-stat .dash-num { font-size: 1.05rem; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
-        .tree-dashboard-stat .dash-num-sub { font-size: 0.6rem; font-weight: 600; color: #c084ff; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tree-dashboard-body { padding: 10px 14px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; }
+        .tree-dashboard-stat { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 4px 0; flex: 1 1 0; min-width: 0; }
+        .tree-dashboard-stat:not(:last-child) { border-right: 1px solid rgba(155,48,255,0.3); padding-right: 14px; margin-right: 12px; }
+        .tree-dashboard-stat-label { font-size: 0.68rem; font-weight: 600; color: #9b30ff; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+        .tree-dashboard-stat-values { display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0; }
+        .tree-dashboard-stat .dash-pair { display: inline-flex; align-items: baseline; gap: 3px; }
+        .tree-dashboard-stat .dash-sep { color: rgba(155,48,255,0.5); font-weight: 600; font-size: 0.7rem; margin: 0 2px; user-select: none; }
+        .tree-dashboard-stat .dash-num { font-size: 1.15rem; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
+        .tree-dashboard-stat .dash-num-sub { font-size: 0.65rem; font-weight: 500; color: #c084ff; text-transform: lowercase; }
         svg { width: 100%; height: 100%; }
         .node-group { cursor: pointer; }
         .node-group:hover .node-bg { filter: brightness(1.25); }
@@ -210,17 +210,18 @@
             <div class="tree-dashboard-stat">
                 <span class="tree-dashboard-stat-label">Objectives</span>
                 <div class="tree-dashboard-stat-values">
-                    <span class="dash-pair dash-pair-total"><span class="dash-num" id="dashObjectives">0</span><span class="dash-num-sub">Total</span></span>
-                    <span class="dash-pair dash-pair-joint"><span class="dash-num" id="dashObjectivesJoint">0</span><span class="dash-num-sub">Joint</span></span>
+                    <span class="dash-pair"><span class="dash-num" id="dashObjectives">0</span><span class="dash-num-sub">total</span></span>
+                    <span class="dash-sep">·</span>
+                    <span class="dash-pair"><span class="dash-num" id="dashObjectivesJoint">0</span><span class="dash-num-sub">joint</span></span>
                 </div>
             </div>
             <div class="tree-dashboard-stat">
                 <span class="tree-dashboard-stat-label">Key Results</span>
-                <div class="tree-dashboard-stat-values"><span class="dash-pair"><span class="dash-num" id="dashKRs">0</span></span></div>
+                <div class="tree-dashboard-stat-values"><span class="dash-num" id="dashKRs">0</span></div>
             </div>
             <div class="tree-dashboard-stat">
                 <span class="tree-dashboard-stat-label">Initiatives</span>
-                <div class="tree-dashboard-stat-values"><span class="dash-pair"><span class="dash-num" id="dashInitiatives">0</span></span></div>
+                <div class="tree-dashboard-stat-values"><span class="dash-num" id="dashInitiatives">0</span></div>
             </div>
         </div>
 </div>
