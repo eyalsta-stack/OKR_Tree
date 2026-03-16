@@ -197,35 +197,42 @@
 
         /* TREE VIEW */
         #tree-view, #company-view { flex-direction: column; height: calc(100vh - 94px); min-height: 0; position: relative; }
-        /* Floating tree dashboard - default position so it's visible before JS runs */
+        /* Floating tree dashboard - neon purple like nodes */
         .tree-dashboard {
             position: absolute; left: 16px; top: 80px; z-index: 40; min-width: 180px;
-            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.35); overflow: hidden;
+            background: rgba(15,23,42,0.96); border: 1px solid #9b30ff;
+            border-radius: 10px;
+            box-shadow: 0 0 16px rgba(155,48,255,0.25), 0 8px 24px rgba(0,0,0,0.4);
+            overflow: hidden;
             user-select: none; visibility: visible; opacity: 1; display: block;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .tree-dashboard:hover {
+            border-color: #b366ff;
+            box-shadow: 0 0 20px rgba(155,48,255,0.4), 0 8px 28px rgba(0,0,0,0.45);
         }
         .tree-dashboard.collapsed { min-width: auto; padding: 0; }
         .tree-dashboard.collapsed .tree-dashboard-body { display: none; }
         .tree-dashboard.collapsed .tree-dashboard-drag { cursor: default; }
         .tree-dashboard-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 6px 10px; background: var(--bg); border-bottom: 1px solid var(--border);
+            padding: 6px 10px; background: rgba(155,48,255,0.08); border-bottom: 1px solid rgba(155,48,255,0.35);
             cursor: move; touch-action: none;
         }
-        .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+        .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: #9b30ff; letter-spacing: 0.5px; }
         .tree-dashboard-toggle {
-            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            background: none; border: none; color: rgba(155,48,255,0.8); cursor: pointer;
             font-size: 1rem; line-height: 1; padding: 0 4px;
         }
-        .tree-dashboard-toggle:hover { color: var(--text); }
-        .tree-dashboard-body { padding: 8px 12px; }
+        .tree-dashboard-toggle:hover { color: #c084ff; }
+        .tree-dashboard-body { padding: 8px 12px; background: rgba(15,23,42,0.5); }
         .tree-dashboard-row {
             display: flex; justify-content: space-between; align-items: baseline;
             padding: 4px 0; font-size: 0.75rem;
         }
         .tree-dashboard-row .label { color: var(--text-muted); }
-        .tree-dashboard-row .value { font-weight: 600; color: var(--text); }
-        .tree-dashboard-row .sub { font-size: 0.65rem; color: #22d3ee; margin-left: 4px; }
+        .tree-dashboard-row .value { font-weight: 600; color: #e2e8f0; }
+        .tree-dashboard-row .sub { font-size: 0.65rem; color: #c084ff; margin-left: 4px; }
         .tree-toolbar {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
@@ -691,9 +698,7 @@
         .stats-value { font-weight: 700; font-variant-numeric: tabular-nums; }
         .stats-divider { border-top: 1px solid var(--border); margin: 4px 0; }
 
-        /* FLOATING DASHBOARD - hover only (position from main .tree-dashboard block above) */
-        .tree-dashboard:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.45); }
-        /* Company view: ensure mini dashboard is visible and positioned */
+        /* Company view: ensure mini dashboard is visible and positioned (neon purple from .tree-dashboard) */
         #company-view #companyDashboard {
             display: block; visibility: visible; opacity: 1;
             position: absolute; left: 16px; top: 80px; z-index: 40;
