@@ -1077,7 +1077,7 @@
 
         <!-- Upload section (shown when no pre-stored data) -->
         <div class="upload-section" id="uploadSection">
-            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">No stored data for this department. Upload a strategy document to generate the tree with AI.</p>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">No stored data for this department. Upload a strategy document to generate a draft (from structure) or use an OpenAI key for AI extraction.</p>
 
             <div class="form-group">
                 <label class="form-label">Strategy Document</label>
@@ -1085,6 +1085,7 @@
                     <button class="input-tab active" onclick="switchInputTab('upload', this)">Upload File</button>
                     <button class="input-tab" onclick="switchInputTab('paste', this)">Paste Text</button>
                     <button class="input-tab" onclick="switchInputTab('url', this)">From URL</button>
+                    <button class="input-tab" onclick="switchInputTab('import-json', this)">Import JSON</button>
                 </div>
 
                 <div id="tab-upload" class="tab-content active">
@@ -1105,17 +1106,41 @@
                     <input class="input" id="urlInput" placeholder="https://docs.google.com/... or any public URL">
                     <p class="info-msg">Supports public URLs. Content will be fetched and parsed.</p>
                 </div>
+
+                <div id="tab-import-json" class="tab-content">
+                    <textarea class="textarea" id="importJsonText" placeholder='Paste OKR tree JSON here (e.g. from Cursor). Root must have "name", "type": "company", "children".' style="min-height:160px;resize:vertical;line-height:1.5;font-family:monospace;font-size:0.8rem"></textarea>
+                    <p class="info-msg">Paste a tree generated in Cursor (or any valid OKR tree JSON) to load it here. No API key needed.</p>
+                </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">OpenAI API Key <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-                <div class="api-key-row">
-                    <div class="form-group">
-                        <input class="input" id="apiKey" type="password" placeholder="sk-... (needed only to generate tree from document)">
+                <label class="form-label">AI Provider <span style="color:var(--text-muted);font-weight:400">(optional — for smarter extraction & chatbot)</span></label>
+                <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+                    <select class="input" id="llmProvider" style="max-width:180px" onchange="onProviderChange()">
+                        <option value="ollama">Ollama (local, free)</option>
+                        <option value="gemini">Google Gemini (free)</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="local">Local AI server</option>
+                    </select>
+                    <div id="apiKeyRow" class="api-key-row" style="flex:1">
+                        <div class="form-group" style="margin:0;flex:1">
+                            <input class="input" id="apiKey" type="password" placeholder="Paste API key here">
+                        </div>
+                        <button class="api-key-toggle" onclick="toggleKeyVisibility()" title="Show/hide key">*</button>
                     </div>
-                    <button class="api-key-toggle" onclick="toggleKeyVisibility()" title="Show/hide key">*</button>
                 </div>
-                <p class="info-msg">Add a key to generate an OKR tree from your document with AI. Your key is stored locally and sent only to OpenAI.</p>
+                <div id="ollamaRow" style="margin-bottom:0.5rem">
+                    <div style="display:flex;gap:0.5rem;align-items:center">
+                        <input class="input" id="ollamaUrl" type="url" placeholder="http://localhost:11434" style="flex:1;max-width:240px" value="http://localhost:11434">
+                        <input class="input" id="ollamaModel" type="text" placeholder="llama3" style="flex:1;max-width:160px" value="llama3">
+                    </div>
+                    <p class="info-msg" style="margin-top:0.25rem">Install <a href="https://ollama.com" target="_blank" style="color:var(--accent)">Ollama</a>, then run <code>ollama pull llama3</code>. No API key needed — everything stays on your machine.<br>If you get a CORS error, start Ollama with: <code>OLLAMA_ORIGINS=* ollama serve</code> (Mac/Linux) or set the <code>OLLAMA_ORIGINS</code> environment variable to <code>*</code> (Windows).</p>
+                </div>
+                <div id="localServerRow" style="display:none;margin-bottom:0.5rem">
+                    <input class="input" id="localServerUrl" type="url" placeholder="http://localhost:3099">
+                    <p class="info-msg" style="margin-top:0.25rem">Run <code>OPENAI_API_KEY=sk-... node server/analyze.js</code> — keeps your key off the browser.</p>
+                </div>
+                <p class="info-msg" id="llmHelpText">Install <a href="https://ollama.com" target="_blank" style="color:var(--accent)">Ollama</a> and run <code>ollama pull llama3</code> — free, private, no API key needed. Everything runs on your machine.</p>
             </div>
         </div>
 
@@ -2055,14 +2080,14 @@ const TYPE_STYLES = { company: { bg: "#000000", borderW: 1.4 }, department: { bg
 const TYPE_LABELS = { company: "COMPANY", department: "DEPARTMENT", subdepartment: "SUB-DEPARTMENT", initiative: "INITIATIVE", objective: "OBJECTIVE", kr: "KEY RESULT" };
 
 const DEPT_COLORS = {
-    "FEF": "#9b30ff", "FEF - Communications": "#22d3ee", "FEF - Baseline": "#4ade80", "FEF - Reports": "#c084fc",
+    "FEF": "#9b30ff", "FEF - Communications": "#22d3ee", "FEF - Baseline / Aurora": "#8b5cf6", "FEF - Baseline": "#4ade80", "FEF - Reports": "#c084fc",
     "FEF - Mobile": "#818cf8", "FEF - Pricing & Packaging": "#e879f9",
     "Money Movement": "#f59e0b", "Commercial Products": "#14b8a6",
     "Ecosystem": "#6366f1", "CLM": "#f472b6"
 };
 
 const SUB_DEPARTMENTS = {
-    "FEF": ["Communications", "Baseline", "Reports", "Mobile", "Pricing & Packaging"],
+    "FEF": ["Communications", "Baseline / Aurora", "Baseline", "Reports", "Mobile", "Pricing & Packaging"],
     "Money Movement": [],
     "Commercial Products": [],
     "Ecosystem": [],
@@ -2310,6 +2335,195 @@ const STORED_TREES = {
             ]
         }
     ]
+},
+"FEF - Baseline / Aurora": {
+    name: "Platform Experience Foundations (PEF) 2026-2028",
+    type: "company",
+    color: "#8b5cf6",
+    detail: "Payoneer\u2019s unified application platform powering MyAccount, Admin, BackOffice, and future apps with speed, reliability, personalization, compliance, and AI-ready data foundations.",
+    children: [
+        {
+            name: "Be Brilliant at the Basics",
+            type: "initiative",
+            color: "#22c55e",
+            companyOkr: "Flawless at the Fundamentals",
+            detail: "Customers trust Payoneer as their reliable daily operations platform because it is fast, stable, and predictable across all regions and devices.",
+            children: [
+                {
+                    name: "Reduce time to first customer value",
+                    type: "objective",
+                    color: "#22c55e",
+                    companyOkr: "Flawless at the Fundamentals",
+                    detail: "Customers in critical geographies complete tasks quickly and confidently because page loads are fast and reliable, especially in China.",
+                    children: [
+                        { name: "China page load time from 15s to 2s", type: "kr", timeline: "2026", color: "#22c55e", detail: "GTM removal and CDN optimization reduce China load times from 15s+ to under 2s." },
+                        { name: "Global P95 page load under 3s", type: "kr", timeline: "2026", color: "#22c55e", detail: "95th percentile load time across all regions stays under 3 seconds for core MyAccount flows." }
+                    ]
+                },
+                {
+                    name: "Increase customer action completion",
+                    type: "objective",
+                    color: "#22c55e",
+                    companyOkr: "Flawless at the Fundamentals",
+                    detail: "More customers complete key actions (reports, payments, reconciliation) without errors because the platform is reliable and predictable.",
+                    children: [
+                        { name: "TICP report download success rate from 50% to 99%", type: "kr", timeline: "2026", color: "#22c55e", detail: "Card Reconciliation MVP and new reports infrastructure eliminate download failures for TICP customers." },
+                        { name: "Reduce migration-related CC tickets & CSM escalations by 80%", type: "kr", timeline: "2026", color: "#22c55e", detail: "Rollout quality measured by near-zero support tickets and CSM complaints related to Aurora migration." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Accelerate Delivery Velocity",
+            type: "initiative",
+            color: "#06b6d4",
+            companyOkr: "Invest and Innovate",
+            detail: "Teams deliver customer value at twice the current speed without sacrificing quality through modular architecture and independent deployment.",
+            children: [
+                {
+                    name: "Reduce engineering effort per communication",
+                    type: "objective",
+                    color: "#06b6d4",
+                    companyOkr: "Invest and Innovate",
+                    detail: "Teams ship new features and modules faster because micro-frontend architecture and design system eliminate monolithic constraints and cross-team dependencies.",
+                    children: [
+                        { name: "Time-to-market from 13 days to 5 days (Phase 1), then 3 days (Phase 2)", type: "kr", timeline: "2026-27", color: "#06b6d4", detail: "Measured as median cycle time from commit to production for new FE features." },
+                        { name: "Deployments per day from 3 to continuous", type: "kr", timeline: "2026", color: "#06b6d4", detail: "Independent team deployment enabled by micro-frontends and module federation." },
+                        { name: "100% Aurora migration \u2014 all modules on decoupled architecture", type: "kr", timeline: "2026", color: "#06b6d4", detail: "Every existing module and user flow runs reliably on the new non-monolithic architecture." }
+                    ]
+                },
+                {
+                    name: "Reduce legacy system maintenance burden",
+                    type: "objective",
+                    color: "#06b6d4",
+                    companyOkr: "Invest and Innovate",
+                    detail: "Teams spend less time on monolith maintenance because legacy coupling, regressions, and merge conflicts are eliminated by modular architecture.",
+                    children: [
+                        { name: "Unified Design System adopted across all product teams", type: "kr", timeline: "2027", color: "#06b6d4", detail: "All teams use shared design system baseline components, eliminating duplicated UI patterns." },
+                        { name: "Shared application shell across all Payoneer apps", type: "kr", timeline: "2027", color: "#06b6d4", detail: "Coherent baseline shell establishes consistent navigation, chrome, and layout across MyAccount, Admin, BackOffice." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Enable Data-Driven Product Decisions",
+            type: "initiative",
+            color: "#f59e0b",
+            companyOkr: "Grow Up\u2011Market",
+            detail: "Every product decision is backed by complete, trustworthy journey data because events are governed, analytics are unified, and experimentation is embedded.",
+            children: [
+                {
+                    name: "Increase customer action completion",
+                    type: "objective",
+                    color: "#f59e0b",
+                    companyOkr: "Grow Up\u2011Market",
+                    detail: "Product teams improve customer outcomes faster because they have complete behavioral and application-level data to measure friction and iterate confidently.",
+                    children: [
+                        { name: "Behavioral event coverage 90%+ across all surfaces", type: "kr", timeline: "2027", color: "#f59e0b", detail: "New analytics SDK instruments 90%+ of customer behavioral events with governed taxonomy." },
+                        { name: "Application event instrumentation 99% complete", type: "kr", timeline: "2027", color: "#f59e0b", detail: "Every application-level event (errors, state changes, API calls) is captured with standardized definitions." },
+                        { name: "Experiments per quarter from 3 to 10", type: "kr", timeline: "2026", color: "#f59e0b", detail: "End-to-end A/B testing capabilities enable 3x more experiments with governed UI real estate and reliable data." }
+                    ]
+                },
+                {
+                    name: "Reduce customer confusion from communications",
+                    type: "objective",
+                    color: "#f59e0b",
+                    companyOkr: "Grow Up\u2011Market",
+                    detail: "Internal teams stop making intuition-driven decisions because unified event taxonomy, governed dashboards, and standardized definitions provide a single source of truth.",
+                    children: [
+                        { name: "Unified event taxonomy with standardized definitions across products", type: "kr", timeline: "2026", color: "#f59e0b", detail: "Dataton sessions finalize event schemas per domain; central governance with documented outputs per flow." },
+                        { name: "Authoritative dashboards defined with legacy sunset criteria", type: "kr", timeline: "2026", color: "#f59e0b", detail: "Decision-making dashboards are defined as authoritative; legacy views have clear sunset timelines." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Elevate TICP & Multi-Entity Experience",
+            type: "initiative",
+            color: "#e879f9",
+            companyOkr: "Grow Up\u2011Market",
+            detail: "TICP and multi-entity customers find Payoneer indispensable for complex operations because the platform adapts to their entity structure, roles, and regional needs.",
+            children: [
+                {
+                    name: "Increase reactivation of dormant customers",
+                    type: "objective",
+                    color: "#e879f9",
+                    companyOkr: "Grow Up\u2011Market",
+                    detail: "TICP and multi-entity customers engage more deeply because the account experience is tailored to their segment, role, entity structure, and lifecycle stage.",
+                    children: [
+                        { name: "TICP Experience Score from 63% to 70%", type: "kr", timeline: "2027", color: "#e879f9", detail: "Segmented and localized experiences for B2B, SMB, TICP, and China lift the composite experience score." },
+                        { name: "Tailored account experience for China Segment B", type: "kr", timeline: "2026", color: "#e879f9", detail: "China customers get regionally optimized experiences with meaningful performance and UX improvements." },
+                        { name: "Account activation increase via tailored homepage", type: "kr", timeline: "2026", color: "#e879f9", detail: "Personalized homepage variants improve activation rate for new customers through contextual guidance." }
+                    ]
+                },
+                {
+                    name: "Reduce communication investigation time",
+                    type: "objective",
+                    color: "#e879f9",
+                    companyOkr: "Grow Up\u2011Market",
+                    detail: "TICP customers operate with confidence because reporting is accurate, complete, and actionable with modern dashboards and statements.",
+                    children: [
+                        { name: "Event-based Monthly Statements and Activity feed", type: "kr", timeline: "2027", color: "#e879f9", detail: "Modern reporting layer built on unified application events replaces legacy report generation." },
+                        { name: "Cross-sell & upsell components embedded across journeys", type: "kr", timeline: "2027", color: "#e879f9", detail: "PLG-ready growth loops improve activation, education, and engagement through consistent cross-sell placement." },
+                        { name: "NPS increase for TICP Tier 1 & 2 countries", type: "kr", timeline: "2027", color: "#e879f9", detail: "Measurable NPS improvement driven by combined platform reliability, personalization, and reporting improvements." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Build Ecosystem & M&A Readiness",
+            type: "initiative",
+            color: "#34d399",
+            companyOkr: "Invest and Innovate",
+            detail: "Payoneer becomes a platform others build on and integrate with because integration contracts, governance, and runtime behavior are standardized and predictable.",
+            children: [
+                {
+                    name: "Reduce request resolution friction",
+                    type: "objective",
+                    color: "#34d399",
+                    companyOkr: "Invest and Innovate",
+                    detail: "Partners and acquired applications integrate faster because standardized contracts and governed modules provide predictable onboarding with minimal friction.",
+                    children: [
+                        { name: "Partner integration onboarding time reduced by 50%", type: "kr", timeline: "2027-28", color: "#34d399", detail: "Standardized integration contracts and predictable runtime behavior halve the time to onboard partner capabilities." },
+                        { name: "Post-M&A application integration time reduced by 50%", type: "kr", timeline: "2027-28", color: "#34d399", detail: "Acquired applications plug into shared shell and governance with half the current integration effort." },
+                        { name: "100% governed surfaces with standardized integration contracts", type: "kr", timeline: "2027", color: "#34d399", detail: "Every customer-facing surface has documented contracts for partner and third-party module integration." }
+                    ]
+                },
+                {
+                    name: "Maintain execution velocity on plan",
+                    type: "objective",
+                    color: "#34d399",
+                    companyOkr: "Invest and Innovate",
+                    detail: "Configuration-driven platform enables near-zero engineering effort for new app variations, supporting rapid expansion into new segments and regions.",
+                    children: [
+                        { name: "Near-zero build time for new segment/region app variations", type: "kr", timeline: "2028", color: "#34d399", detail: "Metadata-powered composition allows new variations (e.g., China Cards app) without dedicated engineering." },
+                        { name: "API-first surface design for ERP and accounting integrations", type: "kr", timeline: "2028", color: "#34d399", detail: "Customers connect Payoneer to their internal systems, ERPs, and accounting tools through stable APIs." }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "Establish AI-Ready Foundations",
+            type: "initiative",
+            color: "#818cf8",
+            companyOkr: "Invest and Innovate",
+            detail: "Platform is ready for responsible AI adoption at scale because data is trustworthy, UI is modular, and experimentation is governed.",
+            children: [
+                {
+                    name: "Enable customer communication explainability",
+                    type: "objective",
+                    color: "#818cf8",
+                    companyOkr: "Invest and Innovate",
+                    detail: "AI-powered workflows can be safely introduced because the platform provides high-integrity data, modular surfaces, and real-time context streams.",
+                    children: [
+                        { name: "Application event data completeness 99% for AI consumption", type: "kr", timeline: "2027", color: "#818cf8", detail: "Complete, governed event data provides the trustworthy substrate AI models require for reliable outputs." },
+                        { name: "Real-time entity/role/segment context streams available", type: "kr", timeline: "2027", color: "#818cf8", detail: "Customer context (entity, role, segment, lifecycle) flows in real-time for AI-driven personalization and guidance." },
+                        { name: "Governed UI real-estate management for modular AI surfaces", type: "kr", timeline: "2027", color: "#818cf8", detail: "Server-driven UI composition enables safe placement of AI-generated recommendations and adaptive UI." }
+                    ]
+                }
+            ]
+        }
+    ]
 }
 };
 
@@ -2382,8 +2596,19 @@ function ensureD3(callback) {
 window.addEventListener('DOMContentLoaded', () => {
     ensureD3(() => {
         installCanvasWheelCapture();
+        const savedProvider = localStorage.getItem('okr_llm_provider');
+        if (savedProvider && document.getElementById('llmProvider')) {
+            document.getElementById('llmProvider').value = savedProvider;
+        }
         const savedKey = localStorage.getItem('okr_api_key');
         if (savedKey) document.getElementById('apiKey').value = savedKey;
+        const savedServerUrl = localStorage.getItem('okr_local_server_url');
+        if (savedServerUrl && document.getElementById('localServerUrl')) document.getElementById('localServerUrl').value = savedServerUrl;
+        const savedOllamaUrl = localStorage.getItem('okr_ollama_url');
+        if (savedOllamaUrl && document.getElementById('ollamaUrl')) document.getElementById('ollamaUrl').value = savedOllamaUrl;
+        const savedOllamaModel = localStorage.getItem('okr_ollama_model');
+        if (savedOllamaModel && document.getElementById('ollamaModel')) document.getElementById('ollamaModel').value = savedOllamaModel;
+        onProviderChange();
         requestAnimationFrame(() => {
             requestAnimationFrame(() => showCompanyView());
         });
@@ -2550,6 +2775,37 @@ window.toggleKeyVisibility = function() {
     inp.type = inp.type === 'password' ? 'text' : 'password';
 };
 
+window.onProviderChange = function() {
+    const provider = document.getElementById('llmProvider').value;
+    const apiKeyRow = document.getElementById('apiKeyRow');
+    const localRow = document.getElementById('localServerRow');
+    const ollamaRow = document.getElementById('ollamaRow');
+    const helpText = document.getElementById('llmHelpText');
+    const apiKeyInput = document.getElementById('apiKey');
+
+    apiKeyRow.style.display = 'none';
+    localRow.style.display = 'none';
+    ollamaRow.style.display = 'none';
+
+    if (provider === 'ollama') {
+        ollamaRow.style.display = 'block';
+        helpText.innerHTML = 'Install <a href="https://ollama.com" target="_blank" style="color:var(--accent)">Ollama</a> and run <code>ollama pull llama3</code> — free, private, no API key needed. Everything runs on your machine.';
+    } else if (provider === 'local') {
+        localRow.style.display = 'block';
+        helpText.innerHTML = 'Run <code>OPENAI_API_KEY=sk-... node server/analyze.js</code> in this project. The app sends docs & chat requests to your server — no key in the browser.';
+    } else {
+        apiKeyRow.style.display = 'flex';
+        if (provider === 'gemini') {
+            apiKeyInput.placeholder = 'Paste Gemini API key';
+            helpText.innerHTML = 'Get a free Gemini key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com</a>. Key is stored locally in your browser.';
+        } else {
+            apiKeyInput.placeholder = 'sk-...';
+            helpText.innerHTML = 'Enter your OpenAI API key. Key is stored locally in your browser.';
+        }
+    }
+    localStorage.setItem('okr_llm_provider', provider);
+};
+
 // Text extraction
 async function extractFromFile(file) {
     const ext = file.name.split('.').pop().toLowerCase();
@@ -2586,6 +2842,7 @@ function hasNewDocInput() {
     if (activeTab === 'upload') return !!(fileInput && fileInput.files[0]);
     if (activeTab === 'paste') return !!(document.getElementById('pasteText')?.value.trim());
     if (activeTab === 'url') return !!(document.getElementById('urlInput')?.value.trim());
+    if (activeTab === 'import-json') return !!(document.getElementById('importJsonText')?.value.trim());
     return false;
 }
 
@@ -2616,18 +2873,36 @@ window.generate = async function() {
         return showError('No existing tree found. Upload a strategy document to generate one.');
     }
 
-    // New doc provided — generate (or re-generate) with AI if key is present
-    const apiKey = document.getElementById('apiKey').value.trim();
-    if (apiKey) localStorage.setItem('okr_api_key', apiKey);
-    if (!apiKey) {
-        return showError('To generate an OKR tree from your document, add an OpenAI API key above (optional field). You can also load an existing tree from Tree Manager.');
-    }
-
     const isUpdate = !!(STORED_TREES[dept] || hasSavedTree(dept));
     const activeTab = document.querySelector('.tab-content.active').id.replace('tab-', '');
     let text = '';
 
     try {
+        if (activeTab === 'import-json') {
+            const raw = document.getElementById('importJsonText').value.trim();
+            if (!raw) return setLoading(false) || showError('Paste OKR tree JSON in the box above.');
+            let treeData;
+            try {
+                treeData = JSON.parse(raw);
+            } catch (e) {
+                return setLoading(false) || showError('Invalid JSON. Check brackets and quotes.');
+            }
+            if (!treeData || typeof treeData.name !== 'string' || !Array.isArray(treeData.children)) {
+                return setLoading(false) || showError('JSON must have a root with "name" and "children" (OKR tree format).');
+            }
+            if (treeData.type !== 'company') treeData.type = 'company';
+            currentData = treeData;
+            currentDept = dept;
+            const entry = { id: Date.now().toString(), name: treeData.name, dept: dept, date: new Date().toLocaleDateString(), data: treeData };
+            let trees = JSON.parse(localStorage.getItem('okr_trees') || '[]');
+            const existingIdx = trees.findIndex(t => t.dept === dept);
+            if (existingIdx >= 0) trees[existingIdx] = { ...entry, id: trees[existingIdx].id }; else trees.unshift(entry);
+            localStorage.setItem('okr_trees', JSON.stringify(trees));
+            showTreeView(treeData, dept, entry.id);
+            renderGallery();
+            return;
+        }
+
         setLoading(true, 'Extracting text from document...');
 
         if (activeTab === 'upload') {
@@ -2645,8 +2920,38 @@ window.generate = async function() {
 
         if (text.length < 100) return setLoading(false) || showError('Document text is too short. Please provide a more detailed strategy document.');
 
-        setLoading(true, isUpdate ? 'Updating tree from new document...' : 'Sending to AI for OKR extraction...');
-        const treeData = await callOpenAI(apiKey, dept, text);
+        const { provider, apiKey: llmKey, localServerUrl, ollamaUrl, ollamaModel } = getLLMConfig();
+        if (localServerUrl) localStorage.setItem('okr_local_server_url', localServerUrl);
+        if (llmKey) localStorage.setItem('okr_api_key', llmKey);
+        if (ollamaUrl) localStorage.setItem('okr_ollama_url', ollamaUrl);
+        if (ollamaModel) localStorage.setItem('okr_ollama_model', ollamaModel);
+        localStorage.setItem('okr_llm_provider', provider);
+
+        let treeData;
+        if (provider === 'local' && localServerUrl) {
+            setLoading(true, 'Sending document to local AI server...');
+            try {
+                const resp = await fetch(localServerUrl.replace(/\/$/, '') + '/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dept: dept, text: text })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(data.error || 'Server error ' + resp.status);
+                if (!data || typeof data.name !== 'string' || !Array.isArray(data.children)) throw new Error('Server returned invalid OKR tree.');
+                treeData = data;
+            } catch (err) {
+                setLoading(false);
+                showError('Local server error: ' + err.message);
+                return;
+            }
+        } else if (provider === 'ollama' || llmKey) {
+            setLoading(true, isUpdate ? 'Updating tree from new document...' : 'Sending to AI for OKR extraction...');
+            treeData = await callAIForTree(dept, text);
+        } else {
+            setLoading(true, 'Building draft from document structure...');
+            treeData = parseDocToOKRTree(text, dept);
+        }
         currentData = treeData;
         currentDept = dept;
 
@@ -2678,7 +2983,125 @@ window.generate = async function() {
     }
 };
 
-async function callOpenAI(apiKey, dept, text) {
+// Rule-based parser: build OKR tree from document structure (no API key)
+const PARSE_COLORS = ['#9b30ff', '#22d3ee', '#06b6d4', '#22c55e', '#4ade80', '#a855f7', '#c084fc', '#e879f9', '#6366f1', '#14b8a6'];
+const PARSE_COMPANY_OKRS = ['Grow Up\u2011Market', 'Flawless at the Fundamentals', 'Strengthen the P&L', 'Invest and Innovate'];
+
+function parseDocToOKRTree(text, dept) {
+    const lines = text.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) throw new Error('Document has no content.');
+
+    const title = lines[0].replace(/^#+\s*/, '').replace(/\s*[-–—]\s*.*$/, '').trim() || (dept + ' Strategy');
+    const root = {
+        name: title.length > 80 ? (dept + ' Strategy') : title,
+        type: 'company',
+        color: PARSE_COLORS[0],
+        detail: 'Draft parsed from document structure. Refine objectives, key results, and initiatives as needed.',
+        children: []
+    };
+
+    let i = 1;
+    let colorIdx = 0;
+    let coIdx = 0;
+
+    while (i < lines.length) {
+        const line = lines[i];
+        const objMatch = line.match(/^(?:#{1,3}\s*|\d+\.\s+)(.+)$/);
+        const bulletMatch = line.match(/^[-*•]\s+(.+)$/);
+        const subBulletMatch = line.match(/^\s{2,}[-*•]\s+(.+)$/);
+
+        if (objMatch && line.length < 120) {
+            const name = objMatch[1].trim();
+            if (name.length < 3) { i++; continue; }
+            const color = PARSE_COLORS[colorIdx % PARSE_COLORS.length];
+            colorIdx++;
+            const companyOkr = PARSE_COMPANY_OKRS[coIdx % PARSE_COMPANY_OKRS.length];
+            coIdx++;
+            const obj = {
+                name: name.substring(0, 80),
+                type: 'objective',
+                color,
+                companyOkr,
+                detail: name,
+                children: []
+            };
+            i++;
+            while (i < lines.length) {
+                const next = lines[i];
+                const krBullet = next.match(/^[-*•]\s+(.+)$/) && !next.match(/^\s{2,}/);
+                const krNum = next.match(/^\d+\.\d+\s+(.+)$/);
+                const subBullet = next.match(/^\s{2,}[-*•]\s+(.+)$/);
+                if ((krBullet || krNum) && !subBullet) {
+                    const krName = (krNum ? krNum[1] : next.replace(/^[-*•]\s+/, '')).trim();
+                    const kr = {
+                        name: krName.substring(0, 80),
+                        type: 'kr',
+                        timeline: '',
+                        color,
+                        detail: krName,
+                        children: []
+                    };
+                    obj.children.push(kr);
+                    i++;
+                    while (i < lines.length && lines[i].match(/^\s{2,}[-*•]\s+/)) {
+                        const iname = lines[i].replace(/^\s{2,}[-*•]\s+/, '').trim();
+                        if (iname.length > 0) kr.children.push({
+                            name: iname.substring(0, 80),
+                            type: 'initiative',
+                            color,
+                            detail: iname
+                        });
+                        i++;
+                    }
+                } else if (next.match(/^(?:#{1,3}\s*|\d+\.\s+)/) && next.length < 120) {
+                    break;
+                } else {
+                    i++;
+                }
+            }
+            if (obj.children.length === 0) {
+                obj.children.push({
+                    name: 'Key result to be defined',
+                    type: 'kr',
+                    timeline: '',
+                    color,
+                    detail: 'Add metrics that prove this outcome.',
+                    children: []
+                });
+            }
+            root.children.push(obj);
+        } else if (bulletMatch && root.children.length > 0) {
+            const lastObj = root.children[root.children.length - 1];
+            const color = lastObj.color;
+            const krName = bulletMatch[1].trim();
+            lastObj.children.push({
+                name: krName.substring(0, 80),
+                type: 'kr',
+                timeline: '',
+                color,
+                detail: krName,
+                children: []
+            });
+            i++;
+        } else {
+            i++;
+        }
+    }
+
+    if (root.children.length === 0) {
+        root.children.push({
+            name: 'Objective from document',
+            type: 'objective',
+            color: PARSE_COLORS[0],
+            companyOkr: PARSE_COMPANY_OKRS[0],
+            detail: 'Extract outcomes from your document and refine here.',
+            children: [{ name: 'Key result to be defined', type: 'kr', timeline: '', color: PARSE_COLORS[0], detail: 'Add metrics.', children: [] }]
+        });
+    }
+    return root;
+}
+
+async function callAIForTree(dept, text) {
     const truncated = text.substring(0, 60000);
     const systemPrompt = `You are an expert OKR strategist following the Continuous Discovery Habits framework (Teresa Torres).
 
@@ -2740,33 +3163,19 @@ RULES:
 11. Every objective MUST have a "companyOkr" field mapping to one of: "Grow Up‑Market", "Flawless at the Fundamentals", "Strengthen the P&L", "Invest and Innovate". Choose the best fit based on the objective's focus.
 12. Return ONLY the JSON object. No explanatory text, no markdown.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Here is the strategy document for the ${dept} department. Parse it into an OKR tree:\n\n${truncated}` }
-            ],
-            temperature: 0.3,
-            max_tokens: 8000
-        })
-    });
+    const content = await callLLM([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Here is the strategy document for the ${dept} department. Parse it into an OKR tree:\n\n${truncated}` }
+    ], { temperature: 0.3, max_tokens: 8000 });
 
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `OpenAI API error: ${response.status}`);
-    }
+    if (!content) throw new Error('No AI provider configured. Select a provider and enter an API key above.');
 
-    const data = await response.json();
-    let content = data.choices[0].message.content.trim();
-    content = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    let cleaned = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
 
     try {
-        return JSON.parse(content);
+        return JSON.parse(cleaned);
     } catch (e) {
-        console.error('Failed to parse AI response:', content);
+        console.error('Failed to parse AI response:', cleaned);
         throw new Error('AI returned invalid JSON. Please try again.');
     }
 }
@@ -3070,6 +3479,93 @@ window.toggleGuide = function() {
         }
     }
 };
+
+// ─── UNIFIED LLM CALLER ───
+// Routes through Ollama, local server, Gemini, or OpenAI depending on provider selector. Returns null if no LLM configured.
+function getLLMConfig() {
+    const provider = document.getElementById('llmProvider')?.value || 'ollama';
+    const apiKey = document.getElementById('apiKey')?.value?.trim() || '';
+    const localServerUrl = (document.getElementById('localServerUrl')?.value || '').trim().replace(/\/$/, '');
+    const ollamaUrl = (document.getElementById('ollamaUrl')?.value || 'http://localhost:11434').trim().replace(/\/$/, '');
+    const ollamaModel = (document.getElementById('ollamaModel')?.value || 'llama3').trim();
+    return { provider, apiKey, localServerUrl, ollamaUrl, ollamaModel };
+}
+
+async function callLLM(messages, { temperature = 0.4, max_tokens = 800 } = {}) {
+    const { provider, apiKey, localServerUrl, ollamaUrl, ollamaModel } = getLLMConfig();
+
+    if (provider === 'local' && localServerUrl) {
+        const resp = await fetch(localServerUrl + '/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages, temperature, max_tokens })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data.error || 'Server error ' + resp.status);
+        return data.content;
+    }
+
+    if (provider === 'ollama') {
+        const resp = await fetch(ollamaUrl + '/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: ollamaModel,
+                messages: messages.map(m => ({ role: m.role, content: m.content })),
+                stream: false,
+                options: { temperature, num_predict: max_tokens }
+            })
+        });
+        if (!resp.ok) {
+            const errText = await resp.text().catch(() => '');
+            throw new Error('Ollama error (' + resp.status + '): ' + (errText || 'Is Ollama running? Try: ollama serve'));
+        }
+        const data = await resp.json();
+        return data.message?.content?.trim() || '';
+    }
+
+    if (provider === 'gemini' && apiKey) {
+        const geminiMessages = [];
+        let systemInstruction = '';
+        for (const m of messages) {
+            if (m.role === 'system') { systemInstruction += (systemInstruction ? '\n' : '') + m.content; continue; }
+            geminiMessages.push({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] });
+        }
+        const body = { contents: geminiMessages, generationConfig: { temperature, maxOutputTokens: max_tokens } };
+        if (systemInstruction) body.systemInstruction = { parts: [{ text: systemInstruction }] };
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error?.message || 'Gemini API error: ' + resp.status);
+        }
+        const data = await resp.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    }
+
+    if (provider === 'openai' && apiKey) {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'gpt-4o', messages, temperature, max_tokens })
+        });
+        if (!resp.ok) throw new Error('OpenAI API error: ' + resp.status);
+        const data = await resp.json();
+        return data.choices[0].message.content.trim();
+    }
+
+    return null;
+}
+
+function hasLLM() {
+    const { provider, apiKey, localServerUrl } = getLLMConfig();
+    if (provider === 'ollama') return true;
+    if (provider === 'local') return !!localServerUrl;
+    return !!apiKey;
+}
 
 // ─── OKRA CHATBOT ───
 const okraAvatarSVG = `<svg viewBox="0 0 64 64" style="width:20px;height:20px;fill:none"><defs><radialGradient id="okraBodA" cx="40%" cy="30%" r="60%"><stop offset="0%" stop-color="#a3e635"/><stop offset="40%" stop-color="#65a30d"/><stop offset="100%" stop-color="#3f6212"/></radialGradient></defs><rect x="30" y="2" width="4" height="7" rx="2" fill="#4d7c0f"/><path d="M32 10 L27 13 L22 11 L25 16 L22 18 L27 17 L32 13 L37 17 L42 18 L39 16 L42 11 L37 13 Z" fill="#4d7c0f"/><path d="M32 13 C23 17,19 28,21 40 Q24 53,32 56 Q40 53,43 40 C45 28,41 17,32 13 Z" fill="url(#okraBodA)" stroke="#3f6212" stroke-width="0.8"/><path d="M22 18 C20 26,20 38,24 52" stroke="#2d5a0e" stroke-width="0.9" opacity="0.5" fill="none"/><path d="M27 15 C25 23,24 36,27 52" stroke="#2d5a0e" stroke-width="0.8" opacity="0.45" fill="none"/><path d="M32 13 L32 56" stroke="#2d5a0e" stroke-width="0.7" opacity="0.4"/><path d="M37 15 C39 23,40 36,37 52" stroke="#2d5a0e" stroke-width="0.8" opacity="0.45" fill="none"/><path d="M42 18 C44 26,44 38,40 52" stroke="#2d5a0e" stroke-width="0.9" opacity="0.5" fill="none"/><path d="M24 17 C23 25,22 35,25 49" stroke="#86efac" stroke-width="0.3" opacity="0.12" fill="none"/><path d="M40 17 C41 25,42 35,39 49" stroke="#86efac" stroke-width="0.3" opacity="0.12" fill="none"/><circle cx="27" cy="30" r="2.5" fill="#0c0c1a"/><circle cx="27" cy="30" r="1.5" fill="#c084fc"/><circle cx="26.5" cy="29.5" r="0.6" fill="#fff" opacity="0.5"/><circle cx="37" cy="30" r="2.5" fill="#0c0c1a"/><circle cx="37" cy="30" r="1.5" fill="#c084fc"/><circle cx="36.5" cy="29.5" r="0.6" fill="#fff" opacity="0.5"/><path d="M28 37 Q32 40 36 37" stroke="#1a1a2e" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
@@ -3502,49 +3998,33 @@ window.rewriteObjective = async function(idx) {
     addUserMessage('Rewrite: ' + target.name);
     showTyping();
 
-    const apiKey = document.getElementById('apiKey')?.value?.trim();
-    if (apiKey) {
+    if (hasLLM()) {
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: `You are an expert OKR coach following the Continuous Discovery Habits framework (Teresa Torres). Rewrite the given objective to be strictly outcome-focused. It must describe a desired change in customer behavior, experience, or business performance — never a solution, feature, or deliverable. Keep it concise (under 50 chars if possible). Also suggest 3 strong Key Results that could measure this outcome. Respond in this JSON format: {"rewritten":"...","reasoning":"one sentence why","keyResults":["KR1","KR2","KR3"]}` },
-                        { role: 'user', content: `Current objective: "${target.name}"\nContext: ${target.detail || 'none'}\nCompany OKR: ${target.companyOkr || 'none'}` }
-                    ],
-                    temperature: 0.4, max_tokens: 500
-                })
-            });
+            const content = await callLLM([
+                { role: 'system', content: `You are an expert OKR coach following the Continuous Discovery Habits framework (Teresa Torres). Rewrite the given objective to be strictly outcome-focused. It must describe a desired change in customer behavior, experience, or business performance — never a solution, feature, or deliverable. Keep it concise (under 50 chars if possible). Also suggest 3 strong Key Results that could measure this outcome. Respond in this JSON format: {"rewritten":"...","reasoning":"one sentence why","keyResults":["KR1","KR2","KR3"]}` },
+                { role: 'user', content: `Current objective: "${target.name}"\nContext: ${target.detail || 'none'}\nCompany OKR: ${target.companyOkr || 'none'}` }
+            ], { temperature: 0.4, max_tokens: 500 });
             hideTyping();
-            if (response.ok) {
-                const data = await response.json();
-                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-                try {
-                    const result = JSON.parse(content);
-                    const krsJson = JSON.stringify(result.keyResults || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    let html = `<p><strong>Suggested rewrite:</strong></p>
-                        <p><code>${escapeHtml(result.rewritten)}</code></p>
-                        <p>${escapeHtml(result.reasoning)}</p>
-                        <p><strong>Suggested Key Results:</strong></p><ul>`;
-                    (result.keyResults || []).forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
-                    html += `</ul><div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
-                        <div class="chat-btn-inline" onclick="applyRewrite(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>
-                        <div class="chat-btn-inline" onclick="applyRewriteWithKRs(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}', '${krsJson}')">Apply rewrite + add KRs</div>
-                    </div>`;
-                    addBotMessage(html);
-                } catch {
-                    addBotMessage(`<p>AI response:</p><p>${escapeHtml(content)}</p>`);
-                }
-            } else {
-                hideTyping();
-                addBotMessage('<p>API error — check your key. Falling back to local suggestions.</p>');
-                localRewrite(target);
+            let parsed = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            try {
+                const result = JSON.parse(parsed);
+                const krsJson = JSON.stringify(result.keyResults || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                let html = `<p><strong>Suggested rewrite:</strong></p>
+                    <p><code>${escapeHtml(result.rewritten)}</code></p>
+                    <p>${escapeHtml(result.reasoning)}</p>
+                    <p><strong>Suggested Key Results:</strong></p><ul>`;
+                (result.keyResults || []).forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
+                html += `</ul><div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+                    <div class="chat-btn-inline" onclick="applyRewrite(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>
+                    <div class="chat-btn-inline" onclick="applyRewriteWithKRs(${idx}, '${escapeHtml(result.rewritten).replace(/'/g, "\\'")}', '${krsJson}')">Apply rewrite + add KRs</div>
+                </div>`;
+                addBotMessage(html);
+            } catch {
+                addBotMessage(`<p>AI response:</p><p>${escapeHtml(parsed)}</p>`);
             }
         } catch (err) {
             hideTyping();
-            addBotMessage(`<p>Connection error: ${escapeHtml(err.message)}. Using local suggestions.</p>`);
+            addBotMessage(`<p>AI error: ${escapeHtml(err.message)}. Using local suggestions.</p>`);
             localRewrite(target);
         }
     } else {
@@ -3633,32 +4113,20 @@ window.rewriteKR = async function(idx) {
     if (!target) return;
     addUserMessage('Rewrite KR: ' + target.name);
     showTyping();
-    const apiKey = document.getElementById('apiKey')?.value?.trim();
-    if (apiKey) {
+    if (hasLLM()) {
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: 'You are an OKR coach. Rewrite the Key Result to be measurable with specific numbers. Format: [Increase/Reduce] [metric] from [baseline] to [target]. Respond in JSON: {"rewritten":"...","reasoning":"one sentence"}' },
-                        { role: 'user', content: `Current KR: "${target.name}"\nContext: ${target.detail || 'none'}` }
-                    ],
-                    temperature: 0.4, max_tokens: 200
-                })
-            });
+            const content = await callLLM([
+                { role: 'system', content: 'You are an OKR coach. Rewrite the Key Result to be measurable with specific numbers. Format: [Increase/Reduce] [metric] from [baseline] to [target]. Respond in JSON: {"rewritten":"...","reasoning":"one sentence"}' },
+                { role: 'user', content: `Current KR: "${target.name}"\nContext: ${target.detail || 'none'}` }
+            ], { temperature: 0.4, max_tokens: 200 });
             hideTyping();
-            if (response.ok) {
-                const data = await response.json();
-                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-                try {
-                    const result = JSON.parse(content);
-                    const rewritten = result.rewritten || target.name;
-                    addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>${escapeHtml(result.reasoning || '')}</p>
-                        <div class="chat-btn-inline" onclick="applyRewriteKR(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
-                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
-            } else { hideTyping(); localRewriteKR(target, idx); }
+            let parsed = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            try {
+                const result = JSON.parse(parsed);
+                const rewritten = result.rewritten || target.name;
+                addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>${escapeHtml(result.reasoning || '')}</p>
+                    <div class="chat-btn-inline" onclick="applyRewriteKR(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
+            } catch { addBotMessage(`<p>${escapeHtml(parsed)}</p>`); }
         } catch (err) { hideTyping(); localRewriteKR(target, idx); }
     } else { hideTyping(); localRewriteKR(target, idx); }
     renderChatChips();
@@ -3701,42 +4169,20 @@ window.rewriteInitiative = async function(idx) {
     const parentKRName = parentKR ? parentKR.name : 'parent Key Result';
     addUserMessage('Rewrite Initiative: ' + target.name);
     showTyping();
-    const apiKey = document.getElementById('apiKey')?.value?.trim();
-    if (apiKey) {
+    if (hasLLM()) {
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: `You are an OKR coach following the Continuous Discovery Habits framework. Initiatives are solutions or experiments under Key Results — they describe what we try to move the metric, not outcomes.
-
-Rewrite the Initiative so it clearly shows:
-1. **What** it is (solution or experiment)
-2. **Which Key Result** it impacts (the parent KR)
-3. **Why** it should move that metric
-4. **How** success will be evaluated
-
-Be concrete and actionable. Good examples: "Run A/B test of new onboarding flow to measure impact on activation rate", "Interview 10 users to validate friction points before redesign". Avoid vague deliverables; focus on testable experiments or specific solutions.
-
-Respond in JSON: {"rewritten":"...","reasoning":"one sentence"}` },
-                        { role: 'user', content: `Current Initiative: "${target.name}"\nParent Key Result: "${parentKRName}"\nContext: ${target.detail || 'none'}` }
-                    ],
-                    temperature: 0.4, max_tokens: 250
-                })
-            });
+            const content = await callLLM([
+                { role: 'system', content: `You are an OKR coach following the Continuous Discovery Habits framework. Initiatives are solutions or experiments under Key Results — they describe what we try to move the metric, not outcomes.\n\nRewrite the Initiative so it clearly shows:\n1. What it is (solution or experiment)\n2. Which Key Result it impacts (the parent KR)\n3. Why it should move that metric\n4. How success will be evaluated\n\nBe concrete and actionable. Respond in JSON: {"rewritten":"...","reasoning":"one sentence"}` },
+                { role: 'user', content: `Current Initiative: "${target.name}"\nParent Key Result: "${parentKRName}"\nContext: ${target.detail || 'none'}` }
+            ], { temperature: 0.4, max_tokens: 250 });
             hideTyping();
-            if (response.ok) {
-                const data = await response.json();
-                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-                try {
-                    const result = JSON.parse(content);
-                    const rewritten = result.rewritten || target.name;
-                    addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>${escapeHtml(result.reasoning || '')}</p>
-                        <div class="chat-btn-inline" onclick="applyRewriteInitiative(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
-                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
-            } else { hideTyping(); localRewriteInitiative(target, idx); }
+            let parsed = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            try {
+                const result = JSON.parse(parsed);
+                const rewritten = result.rewritten || target.name;
+                addBotMessage(`<p><strong>Suggested rewrite:</strong></p><p><code>${escapeHtml(rewritten)}</code></p><p>${escapeHtml(result.reasoning || '')}</p>
+                    <div class="chat-btn-inline" onclick="applyRewriteInitiative(${idx}, '${escapeHtml(rewritten).replace(/'/g, "\\'")}')">Apply rewrite</div>`);
+            } catch { addBotMessage(`<p>${escapeHtml(parsed)}</p>`); }
         } catch (err) { hideTyping(); localRewriteInitiative(target, idx); }
     } else { hideTyping(); localRewriteInitiative(target, idx); }
     renderChatChips();
@@ -3783,47 +4229,25 @@ window.suggestKRsForObjective = async function(idx) {
 
     addUserMessage('Add KRs to: ' + target.name);
     showTyping();
-
-    const apiKey = document.getElementById('apiKey')?.value?.trim();
-    if (apiKey) {
+    if (hasLLM()) {
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: 'You are an OKR coach. Suggest 3 measurable Key Results for the given objective. Each KR must follow: [Increase/Reduce] [metric] from [baseline] to [target]. Be specific with numbers (X%, Y days, etc). Respond in JSON: {"keyResults":["KR1","KR2","KR3"]}' },
-                        { role: 'user', content: `Objective: "${target.name}"\nContext: ${target.detail || 'none'}` }
-                    ],
-                    temperature: 0.4, max_tokens: 400
-                })
-            });
+            const content = await callLLM([
+                { role: 'system', content: 'You are an OKR coach. Suggest 3 measurable Key Results for the given objective. Each KR must follow: [Increase/Reduce] [metric] from [baseline] to [target]. Be specific with numbers (X%, Y days, etc). Respond in JSON: {"keyResults":["KR1","KR2","KR3"]}' },
+                { role: 'user', content: `Objective: "${target.name}"\nContext: ${target.detail || 'none'}` }
+            ], { temperature: 0.4, max_tokens: 400 });
             hideTyping();
-            if (response.ok) {
-                const data = await response.json();
-                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-                try {
-                    const result = JSON.parse(content);
-                    const krs = result.keyResults || [];
-                    const krsJson = JSON.stringify(krs).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    let html = '<p><strong>Suggested Key Results:</strong></p><ul>';
-                    krs.forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
-                    html += `</ul><div class="chat-btn-inline" onclick="applyAddKRs(${idx}, '${krsJson}')">Add these KRs</div>`;
-                    addBotMessage(html);
-                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
-            } else {
-                hideTyping();
-                localSuggestKRs(target, idx);
-            }
-        } catch (err) {
-            hideTyping();
-            localSuggestKRs(target, idx);
-        }
-    } else {
-        hideTyping();
-        localSuggestKRs(target, idx);
-    }
+            let parsed = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            try {
+                const result = JSON.parse(parsed);
+                const krs = result.keyResults || [];
+                const krsJson = JSON.stringify(krs).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                let html = '<p><strong>Suggested Key Results:</strong></p><ul>';
+                krs.forEach(kr => { html += `<li>${escapeHtml(kr)}</li>`; });
+                html += `</ul><div class="chat-btn-inline" onclick="applyAddKRs(${idx}, '${krsJson}')">Add these KRs</div>`;
+                addBotMessage(html);
+            } catch { addBotMessage(`<p>${escapeHtml(parsed)}</p>`); }
+        } catch (err) { hideTyping(); localSuggestKRs(target, idx); }
+    } else { hideTyping(); localSuggestKRs(target, idx); }
     renderChatChips();
 };
 
@@ -3862,57 +4286,27 @@ window.suggestInitiativeForKR = async function(idx) {
 
     addUserMessage('Add Initiative to: ' + target.name);
     showTyping();
-
-    const apiKey = document.getElementById('apiKey')?.value?.trim();
-    if (apiKey) {
+    if (hasLLM()) {
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: `You are an OKR coach following the Continuous Discovery Habits framework. Initiatives are solutions or experiments under Key Results.
-
-Suggest 1 concrete Initiative that clearly shows:
-1. What it is (solution or experiment)
-2. Which Key Result it impacts (the given KR)
-3. Why it should move that metric
-4. How success will be evaluated
-
-Be specific: e.g. "Run A/B test of new onboarding flow to measure impact on activation rate". Avoid vague deliverables. Respond in JSON: {"name":"Initiative name","detail":"brief description covering why and how to evaluate"}` },
-                        { role: 'user', content: `Key Result: "${target.name}"\nContext: ${target.detail || 'none'}` }
-                    ],
-                    temperature: 0.4, max_tokens: 200
-                })
-            });
+            const content = await callLLM([
+                { role: 'system', content: `You are an OKR coach following the Continuous Discovery Habits framework. Initiatives are solutions or experiments under Key Results.\n\nSuggest 1 concrete Initiative that clearly shows:\n1. What it is (solution or experiment)\n2. Which Key Result it impacts (the given KR)\n3. Why it should move that metric\n4. How success will be evaluated\n\nBe specific. Respond in JSON: {"name":"Initiative name","detail":"brief description covering why and how to evaluate"}` },
+                { role: 'user', content: `Key Result: "${target.name}"\nContext: ${target.detail || 'none'}` }
+            ], { temperature: 0.4, max_tokens: 200 });
             hideTyping();
-            if (response.ok) {
-                const data = await response.json();
-                let content = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-                try {
-                    const result = JSON.parse(content);
-                    const name = result.name || 'New Initiative';
-                    const detail = result.detail || '';
-                    const nameEsc = escapeHtml(name).replace(/'/g, "\\'");
-                    const detailEsc = escapeHtml(detail).replace(/'/g, "\\'");
-                    let html = `<p><strong>Suggested Initiative:</strong></p><p><code>${escapeHtml(name)}</code></p>`;
-                    if (detail) html += `<p>${escapeHtml(detail)}</p>`;
-                    html += `<div class="chat-btn-inline" onclick="applyAddInitiative(${idx}, '${nameEsc}', '${detailEsc}')">Add this Initiative</div>`;
-                    addBotMessage(html);
-                } catch { addBotMessage(`<p>${escapeHtml(content)}</p>`); }
-            } else {
-                hideTyping();
-                localSuggestInitiative(target, idx);
-            }
-        } catch (err) {
-            hideTyping();
-            localSuggestInitiative(target, idx);
-        }
-    } else {
-        hideTyping();
-        localSuggestInitiative(target, idx);
-    }
+            let parsed = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            try {
+                const result = JSON.parse(parsed);
+                const name = result.name || 'New Initiative';
+                const detail = result.detail || '';
+                const nameEsc = escapeHtml(name).replace(/'/g, "\\'");
+                const detailEsc = escapeHtml(detail).replace(/'/g, "\\'");
+                let html = `<p><strong>Suggested Initiative:</strong></p><p><code>${escapeHtml(name)}</code></p>`;
+                if (detail) html += `<p>${escapeHtml(detail)}</p>`;
+                html += `<div class="chat-btn-inline" onclick="applyAddInitiative(${idx}, '${nameEsc}', '${detailEsc}')">Add this Initiative</div>`;
+                addBotMessage(html);
+            } catch { addBotMessage(`<p>${escapeHtml(parsed)}</p>`); }
+        } catch (err) { hideTyping(); localSuggestInitiative(target, idx); }
+    } else { hideTyping(); localSuggestInitiative(target, idx); }
     renderChatChips();
 };
 
@@ -4035,8 +4429,7 @@ window.sendChatMessage = async function() {
     addUserMessage(text);
     showTyping();
 
-    const apiKey = document.getElementById('apiKey')?.value?.trim();
-    if (apiKey) {
+    if (hasLLM()) {
         try {
             const treeSummary = getTreeSummary();
             const systemMsg = `You are OKRA, a friendly and sharp OKR coach built into the PayOKR tool. You follow the Continuous Discovery Habits framework (Teresa Torres). You have a warm, encouraging personality — you're helpful, concise, and occasionally witty.
@@ -4058,23 +4451,17 @@ Respond in short, helpful paragraphs. Use HTML formatting (<strong>, <ul>, <li>,
                 else messages.push({ role: 'assistant', content: m.content.replace(/<[^>]*>/g, '') });
             });
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({ model: 'gpt-4o', messages, temperature: 0.5, max_tokens: 800 })
-            });
+            let reply = await callLLM(messages, { temperature: 0.5, max_tokens: 800 });
             hideTyping();
-            if (response.ok) {
-                const data = await response.json();
-                let reply = data.choices[0].message.content.trim();
+            if (reply) {
                 if (!reply.includes('<p>')) reply = '<p>' + reply.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
                 addBotMessage(reply);
             } else {
-                addBotMessage('<p>API error. Please check your API key and try again.</p>');
+                addBotMessage('<p>No response from AI. Check your provider settings.</p>');
             }
         } catch (err) {
             hideTyping();
-            addBotMessage(`<p>Connection error: ${escapeHtml(err.message)}</p>`);
+            addBotMessage(`<p>AI error: ${escapeHtml(err.message)}</p>`);
         }
     } else {
         const delay = 400 + Math.random() * 800;
