@@ -1,0 +1,7 @@
+{
+  "name": "payokr-analyze-server",
+  "version": "1.0.0",
+  "description": "Local server for OKR tree analysis. App sends doc here; server uses OpenAI and returns tree. Run from project: node server/analyze.js",
+  "type": "module",
+  "main": "analyze.js"
+}
