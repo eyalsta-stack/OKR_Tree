@@ -123,6 +123,7 @@
         .tree-dashboard-row .label { color: var(--text-muted); }
         .tree-dashboard-row .value { font-weight: 600; color: #e2e8f0; }
         .tree-dashboard-row .sub { font-size: 0.65rem; color: #c084ff; margin-left: 4px; }
+        .tree-dashboard-row #dashObjectivesJoint { margin-left: 10px; }
         svg { width: 100%; height: 100%; }
         .node-group { cursor: pointer; }
         .node-group:hover .node-bg { filter: brightness(1.25); }
@@ -203,7 +204,7 @@
         <button class="tree-dashboard-toggle" id="treeDashboardToggle" type="button" title="Collapse/expand">&minus;</button>
     </div>
     <div class="tree-dashboard-body">
-        <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="dashObjectives">0</span><span class="sub" id="dashObjectivesJoint"></span></div>
+        <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="dashObjectives">0</span><span class="sub">total</span><span class="value" id="dashObjectivesJoint">0</span><span class="sub">joint</span></div>
         <div class="tree-dashboard-row"><span class="label">Key Results</span><span class="value" id="dashKRs">0</span></div>
         <div class="tree-dashboard-row"><span class="label">Initiatives</span><span class="value" id="dashInitiatives">0</span></div>
     </div>
@@ -919,7 +920,7 @@ function updateTreeDashboard(stats) {
     const k = document.getElementById("dashKRs");
     const i = document.getElementById("dashInitiatives");
     if (o) o.textContent = stats.objectives;
-    if (j) j.textContent = "";
+    if (j) j.textContent = stats.objectivesJoint || 0;
     if (k) k.textContent = stats.krs;
     if (i) i.textContent = stats.initiatives;
 }

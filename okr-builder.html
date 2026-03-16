@@ -233,6 +233,8 @@
         .tree-dashboard-row .label { color: var(--text-muted); }
         .tree-dashboard-row .value { font-weight: 600; color: #e2e8f0; }
         .tree-dashboard-row .sub { font-size: 0.65rem; color: #c084ff; margin-left: 4px; }
+        .tree-dashboard-row #dashObjectivesJoint,
+        .tree-dashboard-row #companyDashObjectivesJoint { margin-left: 10px; }
         .tree-toolbar {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
@@ -1363,7 +1365,7 @@
             <button class="tree-dashboard-toggle" id="treeDashboardToggle" type="button" title="Collapse/expand">&minus;</button>
         </div>
         <div class="tree-dashboard-body">
-            <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="dashObjectives">0</span><span class="sub" id="dashObjectivesJoint"></span></div>
+            <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="dashObjectives">0</span><span class="sub">total</span><span class="value" id="dashObjectivesJoint">0</span><span class="sub">joint</span></div>
             <div class="tree-dashboard-row"><span class="label">Key Results</span><span class="value" id="dashKRs">0</span></div>
             <div class="tree-dashboard-row"><span class="label">Initiatives</span><span class="value" id="dashInitiatives">0</span></div>
         </div>
@@ -1435,7 +1437,7 @@
             <button class="tree-dashboard-toggle" id="companyDashboardToggle" type="button" title="Collapse/expand">&minus;</button>
         </div>
         <div class="tree-dashboard-body">
-            <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="companyDashObjectives">0</span><span class="sub" id="companyDashObjectivesJoint"></span></div>
+            <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="companyDashObjectives">0</span><span class="sub">total</span><span class="value" id="companyDashObjectivesJoint">0</span><span class="sub">joint</span></div>
             <div class="tree-dashboard-row"><span class="label">Key Results</span><span class="value" id="companyDashKRs">0</span></div>
             <div class="tree-dashboard-row"><span class="label">Initiatives</span><span class="value" id="companyDashInitiatives">0</span></div>
         </div>
@@ -3645,7 +3647,7 @@ function updateTreeDashboard(stats) {
     const krsEl = document.getElementById('dashKRs');
     const initiativesEl = document.getElementById('dashInitiatives');
     if (objectivesEl) objectivesEl.textContent = stats.objectives;
-    if (jointEl) jointEl.textContent = stats.objectivesJoint > 0 ? '(' + stats.objectivesJoint + ' joint)' : '';
+    if (jointEl) jointEl.textContent = stats.objectivesJoint;
     if (krsEl) krsEl.textContent = stats.krs;
     if (initiativesEl) initiativesEl.textContent = stats.initiatives;
 }
@@ -3720,7 +3722,7 @@ function updateCompanyDashboard(stats) {
     const krsEl = document.getElementById('companyDashKRs');
     const initiativesEl = document.getElementById('companyDashInitiatives');
     if (objectivesEl) objectivesEl.textContent = stats.objectives;
-    if (jointEl) jointEl.textContent = stats.objectivesJoint > 0 ? '(' + stats.objectivesJoint + ' joint)' : '';
+    if (jointEl) jointEl.textContent = stats.objectivesJoint;
     if (krsEl) krsEl.textContent = stats.krs;
     if (initiativesEl) initiativesEl.textContent = stats.initiatives;
 }
