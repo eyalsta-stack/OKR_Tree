@@ -196,7 +196,36 @@
         .info-msg { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.35rem; }
 
         /* TREE VIEW */
-        #tree-view, #company-view { flex-direction: column; height: calc(100vh - 94px); min-height: 0; }
+        #tree-view, #company-view { flex-direction: column; height: calc(100vh - 94px); min-height: 0; position: relative; }
+        /* Floating tree dashboard */
+        .tree-dashboard {
+            position: absolute; z-index: 40; min-width: 180px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35); overflow: hidden;
+            user-select: none;
+        }
+        .tree-dashboard.collapsed { min-width: auto; padding: 0; }
+        .tree-dashboard.collapsed .tree-dashboard-body { display: none; }
+        .tree-dashboard.collapsed .tree-dashboard-drag { cursor: default; }
+        .tree-dashboard-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 10px; background: var(--bg); border-bottom: 1px solid var(--border);
+            cursor: move; touch-action: none;
+        }
+        .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+        .tree-dashboard-toggle {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 1rem; line-height: 1; padding: 0 4px;
+        }
+        .tree-dashboard-toggle:hover { color: var(--text); }
+        .tree-dashboard-body { padding: 8px 12px; }
+        .tree-dashboard-row {
+            display: flex; justify-content: space-between; align-items: baseline;
+            padding: 4px 0; font-size: 0.75rem;
+        }
+        .tree-dashboard-row .label { color: var(--text-muted); }
+        .tree-dashboard-row .value { font-weight: 600; color: var(--text); }
+        .tree-dashboard-row .sub { font-size: 0.65rem; color: #22d3ee; margin-left: 4px; }
         .tree-toolbar {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
@@ -580,6 +609,125 @@
         .shared-depts-empty-msg {
             font-size: 0.75rem; color: var(--text-muted); padding: 8px 0; font-style: italic;
         }
+
+        /* FLOATING STATS DASHBOARD */
+        .stats-dashboard {
+            position: absolute; top: 12px; left: 12px; z-index: 40;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+            min-width: 200px; max-width: 280px;
+            user-select: none; transition: box-shadow 0.2s;
+            overflow: hidden;
+        }
+        .stats-dashboard:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.45); }
+        .stats-dashboard.collapsed .stats-body { display: none; }
+        .stats-dashboard.dragging { opacity: 0.9; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .stats-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; cursor: grab; background: var(--bg);
+            border-bottom: 1px solid var(--border);
+        }
+        .stats-header:active { cursor: grabbing; }
+        .stats-header-title {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted);
+            display: flex; align-items: center; gap: 5px;
+        }
+        .stats-collapse-btn {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 0.8rem; padding: 0 2px; line-height: 1; transition: transform 0.2s;
+        }
+        .stats-dashboard.collapsed .stats-collapse-btn { transform: rotate(180deg); }
+        .stats-body { padding: 8px 12px 10px; }
+        .stats-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 5px 0; border-bottom: 1px solid var(--border);
+        }
+        .stats-row:last-child { border-bottom: none; }
+        .stats-label {
+            font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px;
+        }
+        .stats-label-dot {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+        }
+        .stats-value {
+            font-size: 0.8rem; font-weight: 700; color: var(--text);
+            display: flex; align-items: center; gap: 4px;
+        }
+        .stats-badge {
+            font-size: 0.55rem; font-weight: 600; padding: 1px 5px; border-radius: 3px;
+            letter-spacing: 0.3px;
+        }
+
+        /* FLOATING STATS DASHBOARD */
+        .stats-dashboard {
+            position: absolute; top: 12px; left: 12px; z-index: 30;
+            background: rgba(18,18,30,0.92); border: 1px solid var(--border);
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px); min-width: 180px;
+            user-select: none; cursor: move; transition: box-shadow 0.15s;
+        }
+        .stats-dashboard:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.5); }
+        .stats-dashboard.collapsed .stats-body { display: none; }
+        .stats-dashboard.collapsed { min-width: auto; }
+        .stats-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 10px; border-bottom: 1px solid var(--border);
+            cursor: move;
+        }
+        .stats-dashboard.collapsed .stats-header { border-bottom: none; }
+        .stats-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+        .stats-toggle {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 0.85rem; padding: 0 2px; line-height: 1;
+        }
+        .stats-toggle:hover { color: var(--text); }
+        .stats-body { padding: 8px 10px; }
+        .stats-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 3px 0; font-size: 0.72rem;
+        }
+        .stats-label { color: var(--text-muted); }
+        .stats-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+        .stats-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+        /* FLOATING DASHBOARD */
+        .tree-dashboard {
+            position: absolute; top: 12px; left: 12px; z-index: 30;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+            min-width: 200px; max-width: 280px;
+            user-select: none; cursor: default;
+            transition: box-shadow 0.15s;
+        }
+        .tree-dashboard:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.45); }
+        .tree-dashboard.collapsed .td-body { display: none; }
+        .tree-dashboard.collapsed { min-width: 0; }
+        .td-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 10px; cursor: grab;
+            background: var(--bg); border-bottom: 1px solid var(--border);
+            border-radius: 10px 10px 0 0;
+        }
+        .tree-dashboard.collapsed .td-header { border-bottom: none; border-radius: 10px; }
+        .td-header:active { cursor: grabbing; }
+        .td-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+        .td-toggle {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 0.85rem; padding: 0 2px; line-height: 1; transition: transform 0.2s;
+        }
+        .td-toggle:hover { color: var(--text); }
+        .tree-dashboard.collapsed .td-toggle { transform: rotate(180deg); }
+        .td-body { padding: 8px 10px 10px; }
+        .td-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 4px 0; font-size: 0.75rem;
+        }
+        .td-label { color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+        .td-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .td-value { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+        .td-sub { font-size: 0.6rem; color: var(--text-muted); font-weight: 400; margin-left: 3px; }
+        .td-divider { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
 
         /* SUGGESTION PANEL */
         .suggestion-bar {
@@ -1233,6 +1381,17 @@
         <span class="breadcrumb-item current">OKR Tree</span>
     </div>
     <div id="tree-container"></div>
+    <div class="tree-dashboard" id="treeDashboard" title="Drag to move">
+        <div class="tree-dashboard-header" id="treeDashboardDrag">
+            <span class="tree-dashboard-title">Summary</span>
+            <button class="tree-dashboard-toggle" id="treeDashboardToggle" type="button" title="Collapse/expand">&minus;</button>
+        </div>
+        <div class="tree-dashboard-body">
+            <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="dashObjectives">0</span><span class="sub" id="dashObjectivesJoint"></span></div>
+            <div class="tree-dashboard-row"><span class="label">Key Results</span><span class="value" id="dashKRs">0</span></div>
+            <div class="tree-dashboard-row"><span class="label">Initiatives</span><span class="value" id="dashInitiatives">0</span></div>
+        </div>
+    </div>
 </div>
 
 <!-- GALLERY VIEW -->
@@ -1415,6 +1574,13 @@
         <div class="em-field">
             <label>Timeline</label>
             <input type="text" id="emTimeline" placeholder="e.g. 2026, Q1 2027">
+        </div>
+        <div class="em-field" id="emLinkField" style="display:none">
+            <label>Azure DevOps Link</label>
+            <div style="display:flex;gap:0.4rem;align-items:center">
+                <input type="url" id="emLink" placeholder="https://dev.azure.com/..." style="flex:1">
+                <a id="emLinkOpen" href="#" target="_blank" style="display:none;color:var(--accent);font-size:0.75rem;white-space:nowrap;text-decoration:none" title="Open link">&#8599; Open</a>
+            </div>
         </div>
         <div class="em-actions">
             <button class="btn btn-primary" onclick="saveEditModal()">Save Changes</button>
@@ -3460,9 +3626,98 @@ function showTreeView(data, dept, treeId, fromTab) {
 
     annotateSharedOkrs(data, dept);
     renderTree(data);
+    updateTreeDashboard(countTreeStats(data));
+    initTreeDashboardOnce();
 
     const suggestions = findSimilarOKRs(data, dept);
     renderSuggestions(suggestions);
+}
+
+function countTreeStats(node) {
+    const counts = { objectives: 0, objectivesJoint: 0, krs: 0, initiatives: 0 };
+    function walk(n) {
+        if (!n) return;
+        const t = n.type || '';
+        if (t === 'objective') {
+            counts.objectives++;
+            if ((n.sharedWith && n.sharedWith.length > 0) || (n.similarSharedWith && n.similarSharedWith.length > 0)) counts.objectivesJoint++;
+        }
+        if (t === 'kr') counts.krs++;
+        if (t === 'initiative') counts.initiatives++;
+        (n.children || []).forEach(walk);
+    }
+    walk(node);
+    return counts;
+}
+
+function updateTreeDashboard(stats) {
+    const el = document.getElementById('treeDashboard');
+    if (!el) return;
+    const objectivesEl = document.getElementById('dashObjectives');
+    const jointEl = document.getElementById('dashObjectivesJoint');
+    const krsEl = document.getElementById('dashKRs');
+    const initiativesEl = document.getElementById('dashInitiatives');
+    if (objectivesEl) objectivesEl.textContent = stats.objectives;
+    if (jointEl) jointEl.textContent = stats.objectivesJoint > 0 ? '(' + stats.objectivesJoint + ' joint)' : '';
+    if (krsEl) krsEl.textContent = stats.krs;
+    if (initiativesEl) initiativesEl.textContent = stats.initiatives;
+}
+
+let treeDashboardInited = false;
+function initTreeDashboardOnce() {
+    if (treeDashboardInited) return;
+    treeDashboardInited = true;
+    const dash = document.getElementById('treeDashboard');
+    const header = document.getElementById('treeDashboardDrag');
+    const toggleBtn = document.getElementById('treeDashboardToggle');
+    if (!dash || !header) return;
+
+    const storageKey = 'okr_tree_dashboard';
+    const defaultPos = { x: 16, y: 80 };
+    let pos = { x: defaultPos.x, y: defaultPos.y };
+    try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            const p = JSON.parse(saved);
+            if (typeof p.x === 'number' && typeof p.y === 'number') pos = p;
+        }
+    } catch (_) {}
+    dash.style.left = pos.x + 'px';
+    dash.style.top = pos.y + 'px';
+
+    let collapsed = false;
+    try {
+        const c = localStorage.getItem(storageKey + '_collapsed');
+        if (c === '1') { collapsed = true; dash.classList.add('collapsed'); toggleBtn.textContent = '+'; }
+    } catch (_) {}
+    if (!collapsed) toggleBtn.textContent = '\u2212';
+
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        dash.classList.toggle('collapsed', collapsed);
+        toggleBtn.textContent = collapsed ? '+' : '\u2212';
+        try { localStorage.setItem(storageKey + '_collapsed', collapsed ? '1' : '0'); } catch (_) {}
+    });
+
+    let dragStart = null;
+    header.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.target.closest('.tree-dashboard-toggle')) return;
+        dragStart = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!dragStart) return;
+        pos.x = e.clientX - dragStart.x;
+        pos.y = e.clientY - dragStart.y;
+        dash.style.left = pos.x + 'px';
+        dash.style.top = pos.y + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+        if (dragStart) {
+            dragStart = null;
+            try { localStorage.setItem(storageKey, JSON.stringify(pos)); } catch (_) {}
+        }
+    });
 }
 
 function annotateSharedOkrs(data, currentDept) {
@@ -5217,6 +5472,7 @@ function showTooltip(event, d) {
         html += `<div class="tooltip-meta" style="color:${co.light || co.color}">Company OKR: ${d.data.companyOkr} — ${co.detail}</div>`;
     }
     if (d.data.timeline) html += `<div class="tooltip-meta">Timeline: ${d.data.timeline}</div>`;
+    if (d.data.link) html += `<div class="tooltip-meta" style="margin-top:0.3rem"><a href="${escapeHtml(d.data.link)}" target="_blank" style="color:#38bdf8;text-decoration:none;font-size:0.7rem">&#8599; Azure DevOps</a></div>`;
     if ((d.data.sharedWith && d.data.sharedWith.length > 0) || (d.data.similarSharedWith && d.data.similarSharedWith.length > 0) || (d.data.sharedDepts && d.data.sharedDepts.length > 0)) {
         html += `<div style="margin-top:0.5rem;border:1px solid #22d3ee33;border-radius:8px;overflow:hidden;background:rgba(34,211,238,0.04)">`;
         html += `<div style="padding:6px 10px;background:rgba(34,211,238,0.08);border-bottom:1px solid #22d3ee22;display:flex;align-items:center;gap:5px"><span style="color:#22d3ee;font-size:0.7rem;font-weight:700;letter-spacing:0.3px">&#128279; CROSS-DEPARTMENT</span></div>`;
@@ -5503,11 +5759,16 @@ function openEditModal(event, d, isCompany) {
     document.getElementById('emDetail').value = data.detail || '';
     document.getElementById('emType').value = data.type || 'objective';
     document.getElementById('emTimeline').value = data.timeline || '';
+    document.getElementById('emLink').value = data.link || '';
+    const linkOpenBtn = document.getElementById('emLinkOpen');
+    if (data.link) { linkOpenBtn.style.display = ''; linkOpenBtn.href = data.link; }
+    else { linkOpenBtn.style.display = 'none'; linkOpenBtn.href = '#'; }
 
     const modal = document.querySelector('.edit-modal');
     modal.querySelectorAll('.em-field, .em-actions, .em-delete').forEach(el => {
         el.style.display = isOrgNode ? 'none' : '';
     });
+    document.getElementById('emLinkField').style.display = (!isOrgNode && data.type === 'initiative') ? '' : 'none';
 
     const coSelect = document.getElementById('emCompanyOkr');
     if (coSelect) {
@@ -5563,12 +5824,14 @@ window.saveEditModal = function() {
     data.type = document.getElementById('emType').value;
     data.companyOkr = document.getElementById('emCompanyOkr').value || undefined;
     data.timeline = document.getElementById('emTimeline').value.trim() || undefined;
+    data.link = document.getElementById('emLink').value.trim() || undefined;
     const wasCompany = editingIsCompany;
     closeEditModal();
     if (wasCompany && companyRoot) {
         updateCompanyTree(companyRoot);
     } else if (root) {
         update(root);
+        if (currentData) updateTreeDashboard(countTreeStats(currentData));
     }
 };
 
@@ -5587,6 +5850,7 @@ window.deleteEditNode = function() {
         updateCompanyTree(parent);
     } else {
         update(parent);
+        if (currentData) updateTreeDashboard(countTreeStats(currentData));
     }
 };
 
@@ -5607,6 +5871,7 @@ window.addChildNode = function(type) {
         updateCompanyTree(parent);
     } else {
         update(parent);
+        if (currentData) updateTreeDashboard(countTreeStats(currentData));
     }
 };
 
