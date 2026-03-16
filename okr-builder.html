@@ -197,9 +197,9 @@
 
         /* TREE VIEW */
         #tree-view, #company-view { flex-direction: column; height: calc(100vh - 94px); min-height: 0; position: relative; }
-        /* Floating tree dashboard */
+        /* Floating tree dashboard - default position so it's visible before JS runs */
         .tree-dashboard {
-            position: absolute; z-index: 40; min-width: 180px;
+            position: absolute; left: 16px; top: 80px; z-index: 40; min-width: 180px;
             background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.35); overflow: hidden;
             user-select: none;
@@ -691,42 +691,8 @@
         .stats-value { font-weight: 700; font-variant-numeric: tabular-nums; }
         .stats-divider { border-top: 1px solid var(--border); margin: 4px 0; }
 
-        /* FLOATING DASHBOARD */
-        .tree-dashboard {
-            position: absolute; top: 12px; left: 12px; z-index: 30;
-            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-            min-width: 200px; max-width: 280px;
-            user-select: none; cursor: default;
-            transition: box-shadow 0.15s;
-        }
+        /* FLOATING DASHBOARD - hover only (position from main .tree-dashboard block above) */
         .tree-dashboard:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.45); }
-        .tree-dashboard.collapsed .td-body { display: none; }
-        .tree-dashboard.collapsed { min-width: 0; }
-        .td-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 6px 10px; cursor: grab;
-            background: var(--bg); border-bottom: 1px solid var(--border);
-            border-radius: 10px 10px 0 0;
-        }
-        .tree-dashboard.collapsed .td-header { border-bottom: none; border-radius: 10px; }
-        .td-header:active { cursor: grabbing; }
-        .td-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        .td-toggle {
-            background: none; border: none; color: var(--text-muted); cursor: pointer;
-            font-size: 0.85rem; padding: 0 2px; line-height: 1; transition: transform 0.2s;
-        }
-        .td-toggle:hover { color: var(--text); }
-        .tree-dashboard.collapsed .td-toggle { transform: rotate(180deg); }
-        .td-body { padding: 8px 10px 10px; }
-        .td-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 4px 0; font-size: 0.75rem;
-        }
-        .td-label { color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
-        .td-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .td-value { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-        .td-sub { font-size: 0.6rem; color: var(--text-muted); font-weight: 400; margin-left: 3px; }
         .td-divider { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
 
         /* SUGGESTION PANEL */
