@@ -202,7 +202,7 @@
             position: absolute; left: 16px; top: 80px; z-index: 40; min-width: 180px;
             background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.35); overflow: hidden;
-            user-select: none;
+            user-select: none; visibility: visible; opacity: 1; display: block;
         }
         .tree-dashboard.collapsed { min-width: auto; padding: 0; }
         .tree-dashboard.collapsed .tree-dashboard-body { display: none; }
@@ -693,6 +693,11 @@
 
         /* FLOATING DASHBOARD - hover only (position from main .tree-dashboard block above) */
         .tree-dashboard:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.45); }
+        /* Company view: ensure mini dashboard is visible and positioned */
+        #company-view #companyDashboard {
+            display: block; visibility: visible; opacity: 1;
+            position: absolute; left: 16px; top: 80px; z-index: 40;
+        }
         .td-divider { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
 
         /* SUGGESTION PANEL */
@@ -1419,6 +1424,17 @@
         <span class="breadcrumb-item current">Company OKR Overview</span>
     </div>
     <div id="company-tree-container"></div>
+    <div class="tree-dashboard" id="companyDashboard" title="Drag to move">
+        <div class="tree-dashboard-header" id="companyDashboardDrag">
+            <span class="tree-dashboard-title">Summary</span>
+            <button class="tree-dashboard-toggle" id="companyDashboardToggle" type="button" title="Collapse/expand">&minus;</button>
+        </div>
+        <div class="tree-dashboard-body">
+            <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="companyDashObjectives">0</span><span class="sub" id="companyDashObjectivesJoint"></span></div>
+            <div class="tree-dashboard-row"><span class="label">Key Results</span><span class="value" id="companyDashKRs">0</span></div>
+            <div class="tree-dashboard-row"><span class="label">Initiatives</span><span class="value" id="companyDashInitiatives">0</span></div>
+        </div>
+    </div>
 </div>
 
 <!-- SUGGESTION BAR -->
@@ -3648,6 +3664,11 @@ function initTreeDashboardOnce() {
             if (typeof p.x === 'number' && typeof p.y === 'number') pos = p;
         }
     } catch (_) {}
+    var treeViewEl = document.getElementById('tree-view');
+    var maxX = treeViewEl ? Math.max(100, (treeViewEl.offsetWidth || 400) - 220) : 400;
+    var maxY = treeViewEl ? Math.max(100, (treeViewEl.offsetHeight || 400) - 180) : 400;
+    pos.x = Math.min(maxX, Math.max(0, pos.x));
+    pos.y = Math.min(maxY, Math.max(0, pos.y));
     dash.style.left = pos.x + 'px';
     dash.style.top = pos.y + 'px';
 
@@ -3675,6 +3696,95 @@ function initTreeDashboardOnce() {
         if (!dragStart) return;
         pos.x = e.clientX - dragStart.x;
         pos.y = e.clientY - dragStart.y;
+        dash.style.left = pos.x + 'px';
+        dash.style.top = pos.y + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+        if (dragStart) {
+            dragStart = null;
+            try { localStorage.setItem(storageKey, JSON.stringify(pos)); } catch (_) {}
+        }
+    });
+}
+
+function updateCompanyDashboard(stats) {
+    const el = document.getElementById('companyDashboard');
+    if (!el) return;
+    const objectivesEl = document.getElementById('companyDashObjectives');
+    const jointEl = document.getElementById('companyDashObjectivesJoint');
+    const krsEl = document.getElementById('companyDashKRs');
+    const initiativesEl = document.getElementById('companyDashInitiatives');
+    if (objectivesEl) objectivesEl.textContent = stats.objectives;
+    if (jointEl) jointEl.textContent = stats.objectivesJoint > 0 ? '(' + stats.objectivesJoint + ' joint)' : '';
+    if (krsEl) krsEl.textContent = stats.krs;
+    if (initiativesEl) initiativesEl.textContent = stats.initiatives;
+}
+
+/** Company dashboard = sum of stats from all department trees (the data we already have). */
+function updateCompanyDashboardFromTrees() {
+    const trees = getAllTrees();
+    const aggregated = { objectives: 0, objectivesJoint: 0, krs: 0, initiatives: 0 };
+    trees.forEach(t => {
+        if (!t.data) return;
+        const s = countTreeStats(t.data);
+        aggregated.objectives += s.objectives;
+        aggregated.objectivesJoint += s.objectivesJoint;
+        aggregated.krs += s.krs;
+        aggregated.initiatives += s.initiatives;
+    });
+    updateCompanyDashboard(aggregated);
+}
+
+let companyDashboardInited = false;
+function initCompanyDashboardOnce() {
+    if (companyDashboardInited) return;
+    companyDashboardInited = true;
+    const dash = document.getElementById('companyDashboard');
+    const header = document.getElementById('companyDashboardDrag');
+    const toggleBtn = document.getElementById('companyDashboardToggle');
+    if (!dash || !header) return;
+    const storageKey = 'okr_company_dashboard';
+    const defaultPos = { x: 16, y: 80 };
+    let pos = { x: defaultPos.x, y: defaultPos.y };
+    try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            const p = JSON.parse(saved);
+            if (typeof p.x === 'number' && typeof p.y === 'number') pos = p;
+        }
+    } catch (_) {}
+    var companyViewEl = document.getElementById('company-view');
+    var maxX = companyViewEl ? Math.max(100, (companyViewEl.offsetWidth || 400) - 220) : 400;
+    var maxY = companyViewEl ? Math.max(100, (companyViewEl.offsetHeight || 400) - 180) : 400;
+    pos.x = Math.min(maxX, Math.max(0, pos.x));
+    pos.y = Math.min(maxY, Math.max(0, pos.y));
+    dash.style.left = pos.x + 'px';
+    dash.style.top = pos.y + 'px';
+    let collapsed = false;
+    try {
+        if (localStorage.getItem(storageKey + '_collapsed') === '1') {
+            collapsed = true;
+            dash.classList.add('collapsed');
+            toggleBtn.textContent = '+';
+        }
+    } catch (_) {}
+    if (!collapsed) toggleBtn.textContent = '\u2212';
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        dash.classList.toggle('collapsed', collapsed);
+        toggleBtn.textContent = collapsed ? '+' : '\u2212';
+        try { localStorage.setItem(storageKey + '_collapsed', collapsed ? '1' : '0'); } catch (_) {}
+    });
+    let dragStart = null;
+    header.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.target.closest('.tree-dashboard-toggle')) return;
+        dragStart = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!dragStart) return;
+        pos.x = Math.min(companyViewEl ? companyViewEl.offsetWidth - 220 : 400, Math.max(0, e.clientX - dragStart.x));
+        pos.y = Math.min(companyViewEl ? companyViewEl.offsetHeight - 180 : 400, Math.max(0, e.clientY - dragStart.y));
         dash.style.left = pos.x + 'px';
         dash.style.top = pos.y + 'px';
     });
@@ -6172,6 +6282,8 @@ window.showCompanyView = function(fromTab) {
     activeTreeId = '__company__';
     populateSwitcher('companySwitcherDropdown', '__company__');
     renderCompanyTree();
+    var companyDash = document.getElementById('companyDashboard');
+    if (companyDash) { companyDash.style.display = 'block'; companyDash.style.visibility = 'visible'; }
     if (!fromTab) addTab('tab-company', 'Company Overview', '#9b30ff', () => showCompanyView(true));
 };
 
@@ -6357,6 +6469,8 @@ function renderCompanyTree() {
                 <div>Save at least one department OKR tree to see the company overview.</div>
                 <button class="btn btn-primary" style="margin-top:1.25rem" onclick="showInputView()">+ Create Tree</button>
             </div>`;
+        updateCompanyDashboardFromTrees();
+        initCompanyDashboardOnce();
         return;
     }
 
@@ -6419,6 +6533,8 @@ function _renderCompanyTreeCore(companyData) {
     });
 
     updateCompanyTree(companyRoot);
+    updateCompanyDashboardFromTrees();
+    initCompanyDashboardOnce();
     function scheduleFit() {
         const w = companyContainer.clientWidth, h = companyContainer.clientHeight;
         if (w && h) setTimeout(() => { if (typeof fitCompanyWindow === 'function') fitCompanyWindow(); }, 450);

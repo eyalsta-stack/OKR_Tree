@@ -21,6 +21,7 @@
             color: var(--text);
             overflow: hidden;
             height: 100vh;
+            position: relative;
         }
         .header {
             background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
@@ -96,6 +97,26 @@
         }
 
         #tree-container { width: 100%; height: calc(100vh - 90px); position: relative; }
+        .tree-dashboard {
+            position: absolute; left: 16px; top: 90px; z-index: 40; min-width: 180px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35); overflow: hidden;
+            user-select: none;
+        }
+        .tree-dashboard.collapsed .tree-dashboard-body { display: none; }
+        .tree-dashboard-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 10px; background: var(--bg); border-bottom: 1px solid var(--border);
+            cursor: move;
+        }
+        .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+        .tree-dashboard-toggle { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; }
+        .tree-dashboard-toggle:hover { color: var(--text); }
+        .tree-dashboard-body { padding: 8px 12px; }
+        .tree-dashboard-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 0.75rem; }
+        .tree-dashboard-row .label { color: var(--text-muted); }
+        .tree-dashboard-row .value { font-weight: 600; color: var(--text); }
+        .tree-dashboard-row .sub { font-size: 0.65rem; color: #22d3ee; margin-left: 4px; }
         svg { width: 100%; height: 100%; }
         .node-group { cursor: pointer; }
         .node-group:hover .node-bg { filter: brightness(1.25); }
@@ -170,6 +191,17 @@
 </div>
 
 <div id="tree-container"></div>
+<div class="tree-dashboard" id="treeDashboard" title="Drag to move">
+    <div class="tree-dashboard-header" id="treeDashboardDrag">
+        <span class="tree-dashboard-title">Summary</span>
+        <button class="tree-dashboard-toggle" id="treeDashboardToggle" type="button" title="Collapse/expand">&minus;</button>
+    </div>
+    <div class="tree-dashboard-body">
+        <div class="tree-dashboard-row"><span class="label">Objectives</span><span class="value" id="dashObjectives">0</span><span class="sub" id="dashObjectivesJoint"></span></div>
+        <div class="tree-dashboard-row"><span class="label">Key Results</span><span class="value" id="dashKRs">0</span></div>
+        <div class="tree-dashboard-row"><span class="label">Initiatives</span><span class="value" id="dashInitiatives">0</span></div>
+    </div>
+</div>
 
 <div class="hint" id="hint">Double-click a node to zoom in &bull; Single click to expand/collapse &bull; Scroll to zoom &bull; Drag to pan</div>
 
@@ -861,6 +893,84 @@ function toggleOrientation() {
 
 update(root);
 svg.call(zoom.transform, d3.zoomIdentity.translate(80, height / 2).scale(2));
+
+function countTreeStats(node) {
+    const counts = { objectives: 0, objectivesJoint: 0, krs: 0, initiatives: 0 };
+    function walk(n) {
+        if (!n) return;
+        const t = n.type || "";
+        if (t === "objective") { counts.objectives++; }
+        if (t === "kr") counts.krs++;
+        if (t === "initiative") counts.initiatives++;
+        (n.children || []).forEach(walk);
+    }
+    walk(node);
+    return counts;
+}
+function updateTreeDashboard(stats) {
+    const o = document.getElementById("dashObjectives");
+    const j = document.getElementById("dashObjectivesJoint");
+    const k = document.getElementById("dashKRs");
+    const i = document.getElementById("dashInitiatives");
+    if (o) o.textContent = stats.objectives;
+    if (j) j.textContent = "";
+    if (k) k.textContent = stats.krs;
+    if (i) i.textContent = stats.initiatives;
+}
+function initTreeDashboard() {
+    const dash = document.getElementById("treeDashboard");
+    const header = document.getElementById("treeDashboardDrag");
+    const toggleBtn = document.getElementById("treeDashboardToggle");
+    if (!dash || !header) return;
+    let pos = { x: 16, y: 90 };
+    try {
+        const saved = localStorage.getItem("okr_tree_dashboard");
+        if (saved) {
+            const p = JSON.parse(saved);
+            if (typeof p.x === "number" && typeof p.y === "number") pos = p;
+        }
+    } catch (_) {}
+    pos.x = Math.min(window.innerWidth - 220, Math.max(0, pos.x));
+    pos.y = Math.min(window.innerHeight - 180, Math.max(0, pos.y));
+    dash.style.left = pos.x + "px";
+    dash.style.top = pos.y + "px";
+    let collapsed = false;
+    try {
+        if (localStorage.getItem("okr_tree_dashboard_collapsed") === "1") {
+            collapsed = true;
+            dash.classList.add("collapsed");
+            toggleBtn.textContent = "+";
+        }
+    } catch (_) {}
+    if (!collapsed) toggleBtn.textContent = "\u2212";
+    toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        dash.classList.toggle("collapsed", collapsed);
+        toggleBtn.textContent = collapsed ? "+" : "\u2212";
+        try { localStorage.setItem("okr_tree_dashboard_collapsed", collapsed ? "1" : "0"); } catch (_) {}
+    });
+    let dragStart = null;
+    header.addEventListener("mousedown", (e) => {
+        if (e.button !== 0 || e.target.closest(".tree-dashboard-toggle")) return;
+        dragStart = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    });
+    document.addEventListener("mousemove", (e) => {
+        if (!dragStart) return;
+        pos.x = Math.min(window.innerWidth - 220, Math.max(0, e.clientX - dragStart.x));
+        pos.y = Math.min(window.innerHeight - 180, Math.max(0, e.clientY - dragStart.y));
+        dash.style.left = pos.x + "px";
+        dash.style.top = pos.y + "px";
+    });
+    document.addEventListener("mouseup", () => {
+        if (dragStart) {
+            dragStart = null;
+            try { localStorage.setItem("okr_tree_dashboard", JSON.stringify(pos)); } catch (_) {}
+        }
+    });
+}
+updateTreeDashboard(countTreeStats(DATA));
+initTreeDashboard();
 
 setTimeout(() => {
     const hint = document.getElementById("hint");
