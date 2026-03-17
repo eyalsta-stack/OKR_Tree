@@ -98,11 +98,12 @@
 
         #tree-container { width: 100%; height: calc(100vh - 90px); position: relative; }
         .tree-dashboard {
-            position: absolute; left: 16px; top: 90px; z-index: 40; min-width: 420px; width: max-content;
+            position: absolute; left: 16px; top: 90px; z-index: 40;
+            width: max-content; max-width: calc(100vw - 24px); min-width: 280px;
             background: rgba(15,23,42,0.96); border: 1px solid #9b30ff;
             border-radius: 10px;
             box-shadow: 0 0 16px rgba(155,48,255,0.25), 0 8px 24px rgba(0,0,0,0.4);
-            overflow: hidden; user-select: none;
+            overflow: visible; user-select: none;
             transition: box-shadow 0.2s, border-color 0.2s;
         }
         .tree-dashboard:hover {
@@ -113,19 +114,16 @@
         .tree-dashboard-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 6px 10px; background: rgba(155,48,255,0.08); border-bottom: 1px solid rgba(155,48,255,0.35);
-            cursor: move;
+            cursor: move; min-width: 100%; box-sizing: border-box;
         }
         .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: #9b30ff; letter-spacing: 0.5px; }
         .tree-dashboard-toggle { background: none; border: none; color: rgba(155,48,255,0.8); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; }
         .tree-dashboard-toggle:hover { color: #c084ff; }
-        .tree-dashboard-body { padding: 10px 14px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; width: max-content; }
-        .tree-dashboard-stat { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 4px 0; flex: 0 0 auto; min-width: 0; }
-        .tree-dashboard-stat:first-child { min-width: 200px; }
-        .tree-dashboard-stat:nth-child(2) { min-width: 110px; }
-        .tree-dashboard-stat:nth-child(3) { min-width: 110px; }
+        .tree-dashboard-body { padding: 10px 14px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; width: max-content; box-sizing: border-box; }
+        .tree-dashboard-stat { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 4px 0; flex: 0 0 auto; }
         .tree-dashboard-stat:not(:last-child) { border-right: 1px solid rgba(155,48,255,0.3); padding-right: 14px; margin-right: 12px; }
         .tree-dashboard-stat-label { font-size: 0.68rem; font-weight: 600; color: #9b30ff; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
-        .tree-dashboard-stat-values { display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0; white-space: nowrap; }
+        .tree-dashboard-stat-values { display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 6px; white-space: nowrap; }
         .tree-dashboard-stat .dash-pair { display: inline-flex; align-items: baseline; gap: 3px; }
         .tree-dashboard-stat .dash-sep { color: rgba(155,48,255,0.5); font-weight: 600; font-size: 0.7rem; margin: 0 2px; user-select: none; }
         .tree-dashboard-stat .dash-num { font-size: 1.15rem; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
