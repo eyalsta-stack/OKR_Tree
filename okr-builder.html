@@ -200,7 +200,7 @@
         /* Floating tree dashboard - neon purple like nodes */
         .tree-dashboard {
             position: absolute; left: 16px; top: 80px; z-index: 40;
-            width: max-content; max-width: calc(100vw - 24px); min-width: 280px;
+            min-width: 320px; width: max-content; max-width: calc(100vw - 32px);
             background: rgba(15,23,42,0.96); border: 1px solid #9b30ff;
             border-radius: 10px;
             box-shadow: 0 0 16px rgba(155,48,255,0.25), 0 8px 24px rgba(0,0,0,0.4);
@@ -218,7 +218,7 @@
         .tree-dashboard-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 6px 10px; background: rgba(155,48,255,0.08); border-bottom: 1px solid rgba(155,48,255,0.35);
-            cursor: move; touch-action: none; min-width: 100%; box-sizing: border-box;
+            cursor: move; touch-action: none;
         }
         .tree-dashboard-title { font-size: 0.7rem; font-weight: 700; color: #9b30ff; letter-spacing: 0.5px; }
         .tree-dashboard-toggle {
@@ -226,7 +226,7 @@
             font-size: 1rem; line-height: 1; padding: 0 4px;
         }
         .tree-dashboard-toggle:hover { color: #c084ff; }
-        .tree-dashboard-body { padding: 10px 14px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; width: max-content; box-sizing: border-box; }
+        .tree-dashboard-body { padding: 10px 14px; background: rgba(15,23,42,0.5); display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0; width: max-content; }
         .tree-dashboard-stat { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 4px 0; flex: 0 0 auto; }
         .tree-dashboard-stat:not(:last-child) { border-right: 1px solid rgba(155,48,255,0.3); padding-right: 14px; margin-right: 12px; }
         .tree-dashboard-stat-label { font-size: 0.68rem; font-weight: 600; color: #9b30ff; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
@@ -425,7 +425,8 @@
             background: var(--surface); -webkit-overflow-scrolling: touch;
         }
         .gallery-table {
-            width: max-content; min-width: 100%; border-collapse: collapse; font-size: 0.78rem; table-layout: auto;
+            width: max-content; min-width: 100%; border-collapse: collapse; font-size: 0.78rem;
+            table-layout: auto;
         }
         .gallery-table thead { position: sticky; top: 0; z-index: 2; }
         .gallery-table th {
@@ -441,8 +442,6 @@
             padding: 0.5rem 0.85rem; border-bottom: 1px solid rgba(42,45,66,0.5);
             vertical-align: middle; white-space: nowrap;
         }
-        .gallery-table th.gt-cell-wrap,
-        .gallery-table td.gt-cell-wrap { white-space: normal; word-break: break-word; min-width: 10rem; max-width: 40rem; }
         .gallery-table tbody tr { transition: background 0.15s; cursor: pointer; }
         .gallery-table tbody tr:hover { background: rgba(155,48,255,0.04); }
         .gallery-table tbody tr:last-child td { border-bottom: none; }
@@ -6245,9 +6244,9 @@ function renderGallery() {
 
     let html = `<div class="gallery-table-wrap"><table class="gallery-table">
         <thead><tr>
-            <th class="${sorted('dept')} gt-cell-wrap" onclick="gallerySort('dept')">Department ${sortIcon('dept')}</th>
-            <th class="${sorted('name')} gt-cell-wrap" onclick="gallerySort('name')">Tree Name ${sortIcon('name')}</th>
-            <th class="${sorted('companyOkr')} gt-cell-wrap" onclick="gallerySort('companyOkr')">Company OKR ${sortIcon('companyOkr')}</th>
+            <th class="${sorted('dept')}" onclick="gallerySort('dept')">Department ${sortIcon('dept')}</th>
+            <th class="${sorted('name')}" onclick="gallerySort('name')">Tree Name ${sortIcon('name')}</th>
+            <th class="${sorted('companyOkr')}" onclick="gallerySort('companyOkr')">Company OKR ${sortIcon('companyOkr')}</th>
             <th class="${sorted('initiatives')}" onclick="gallerySort('initiatives')" style="text-align:center">Initiatives ${sortIcon('initiatives')}</th>
             <th class="${sorted('objectives')}" onclick="gallerySort('objectives')" style="text-align:center">Objectives ${sortIcon('objectives')}</th>
             <th class="${sorted('krs')}" onclick="gallerySort('krs')" style="text-align:center">Key Results ${sortIcon('krs')}</th>
@@ -6269,9 +6268,9 @@ function renderGallery() {
                 return `<span class="gt-co-tag" style="background:${coObj.color}22;color:${coObj.color}">${co}</span>`;
             }).join('');
             html += `<tr onclick="showCompanyView()" style="background:var(--surface2)">
-                <td class="gt-cell-wrap"><span class="gt-dept-badge" style="background:#9b30ff22;color:#9b30ff">&#127758; All (${totalDepts})</span></td>
-                <td class="gt-cell-wrap"><span class="gt-name" style="font-weight:700">Company Overview</span></td>
-                <td class="gt-cell-wrap"><div class="gt-company-okrs">${allCoTags}</div></td>
+                <td><span class="gt-dept-badge" style="background:#9b30ff22;color:#9b30ff">&#127758; All (${totalDepts})</span></td>
+                <td><span class="gt-name" style="font-weight:700">Company Overview</span></td>
+                <td><div class="gt-company-okrs">${allCoTags}</div></td>
                 <td class="gt-num">${totalInit}</td>
                 <td class="gt-num">${totalObj}</td>
                 <td class="gt-num">${totalKr}</td>
@@ -6292,9 +6291,9 @@ function renderGallery() {
         const deleteBtn = r.isStored ? '' : `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteSavedTree('${r.id}', event)">Delete</button>`;
         const escapedDept = r.dept.replace(/'/g, "\\'");
         html += `<tr onclick="loadSavedTree('${r.id}')">
-            <td class="gt-cell-wrap"><span class="gt-dept-badge" style="background:${r.color}22;color:${r.color}">${r.dept}</span></td>
-            <td class="gt-cell-wrap"><span class="gt-name">${r.name}</span></td>
-            <td class="gt-cell-wrap"><div class="gt-company-okrs">${coTags || '<span style="color:var(--text-muted)">—</span>'}</div></td>
+            <td><span class="gt-dept-badge" style="background:${r.color}22;color:${r.color}">${r.dept}</span></td>
+            <td><span class="gt-name">${r.name}</span></td>
+            <td><div class="gt-company-okrs">${coTags || '<span style="color:var(--text-muted)">—</span>'}</div></td>
             <td class="gt-num">${r.initiatives}</td>
             <td class="gt-num">${r.objectives}</td>
             <td class="gt-num">${r.krs}</td>
