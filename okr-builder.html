@@ -1106,26 +1106,6 @@
     </style>
 </head>
 <body>
-<script>
-window.onerror = function(msg, url, line, col, err) {
-    var d = document.getElementById('authDebug');
-    if (d) d.innerHTML += '<div style="color:#f87171;font-size:0.7rem;word-break:break-all">JS Error: ' + msg + ' (line ' + line + ')</div>';
-    console.error('Global error:', msg, 'line:', line);
-    return false;
-};
-window.addEventListener('unhandledrejection', function(e) {
-    var d = document.getElementById('authDebug');
-    if (d) d.innerHTML += '<div style="color:#f87171;font-size:0.7rem;word-break:break-all">Promise Error: ' + (e.reason && e.reason.message || e.reason || 'unknown') + '</div>';
-});
-window.addEventListener('load', function() {
-    var d = document.getElementById('authDebug');
-    if (typeof window.authSubmit !== 'function') {
-        if (d) d.innerHTML += '<div style="color:#f87171;font-size:0.7rem">CRITICAL: authSubmit not defined — main script failed to load</div>';
-    } else {
-        if (d) d.innerHTML += '<div style="color:#4ade80;font-size:0.7rem">Script loaded OK</div>';
-    }
-});
-</script>
 
 <!-- AUTH SCREEN -->
 <div class="auth-screen" id="authScreen">
@@ -1155,7 +1135,6 @@ window.addEventListener('load', function() {
             </div>
         </div>
         <div class="auth-error" id="authError"></div>
-        <div id="authDebug" style="margin-top:0.5rem;text-align:left;max-height:120px;overflow-y:auto"></div>
     </div>
 </div>
 
