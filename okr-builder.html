@@ -1430,7 +1430,7 @@
                 </button>
                 <div class="tree-switcher-dropdown" id="companySwitcherDropdown"></div>
             </div>
-            <span style="color:var(--text-muted);font-size:0.8rem">Unified view of all departments</span>
+            <span style="color:var(--text-muted);font-size:0.8rem">Unified view of all domains</span>
         </div>
         <div class="tree-controls">
             <button class="btn btn-sm" onclick="companyExpandAll()">Expand All</button>
@@ -2341,8 +2341,8 @@ let isHorizontal = true;
 let root, svg, g, zoomBehavior, treeContainer;
 let lastExpandTime = 0;
 
-const TYPE_STYLES = { company: { bg: "#000000", borderW: 1.4 }, department: { bg: "#000000", borderW: 1.2 }, subdepartment: { bg: "#000000", borderW: 1 }, initiative: { bg: "#000000", borderW: 1 }, objective: { bg: "#120d22", borderW: 1 }, kr: { bg: "#151828", borderW: 0.8 } };
-const TYPE_LABELS = { company: "COMPANY", department: "DEPARTMENT", subdepartment: "SUB-DEPARTMENT", initiative: "INITIATIVE", objective: "OBJECTIVE", kr: "KEY RESULT" };
+const TYPE_STYLES = { company: { bg: "#000000", borderW: 1.4 }, domain: { bg: "#000000", borderW: 1.3 }, department: { bg: "#000000", borderW: 1.2 }, subdepartment: { bg: "#000000", borderW: 1 }, initiative: { bg: "#000000", borderW: 1 }, objective: { bg: "#120d22", borderW: 1 }, kr: { bg: "#151828", borderW: 0.8 } };
+const TYPE_LABELS = { company: "COMPANY", domain: "DOMAIN", department: "DEPARTMENT", subdepartment: "SUB-DEPARTMENT", initiative: "INITIATIVE", objective: "OBJECTIVE", kr: "KEY RESULT" };
 
 function hashInitiativeSim(str) {
     let h = 0;
@@ -2377,6 +2377,12 @@ const SUB_DEPARTMENTS = {
     "Commercial Products": [],
     "Ecosystem": [],
     "CLM": []
+};
+
+const DOMAINS = {
+    "Platform": { color: "#9b30ff", departments: ["FEF", "Money Movement", "Commercial Products", "Ecosystem", "CLM"] },
+    "Growth": { color: "#f59e0b", departments: [] },
+    "Compliance": { color: "#14b8a6", departments: [] }
 };
 
 const CUSTOM_SUB_DEPARTMENTS_KEY = 'okr_custom_sub_departments';
@@ -6240,7 +6246,7 @@ function openEditModal(event, d, isCompany) {
     editingIsCompany = !!isCompany;
     const data = d.data;
     if (data.empty) return;
-    const orgTypes = ['company', 'department', 'subdepartment'];
+    const orgTypes = ['company', 'domain', 'department', 'subdepartment'];
     const isOrgNode = orgTypes.includes(data.type);
     document.getElementById('emName').value = data.name || '';
     document.getElementById('emDetail').value = data.detail || '';
@@ -6809,12 +6815,41 @@ function buildCompanyData() {
 
     if (deptChildren.length === 0) return null;
 
+    const deptByName = {};
+    deptChildren.forEach(d => { deptByName[d.name] = d; });
+
+    const domainChildren = Object.entries(DOMAINS).map(([domainName, domainInfo]) => {
+        const domainDepts = domainInfo.departments
+            .map(dName => deptByName[dName])
+            .filter(Boolean);
+        domainInfo.departments.forEach(dName => { delete deptByName[dName]; });
+        return {
+            name: domainName,
+            type: "domain",
+            color: domainInfo.color,
+            detail: domainDepts.length > 0 ? `${domainName} domain` : `${domainName} — no departments yet`,
+            empty: domainDepts.length === 0,
+            children: domainDepts
+        };
+    });
+
+    const unmapped = Object.values(deptByName);
+    if (unmapped.length > 0) {
+        domainChildren.push({
+            name: "Other",
+            type: "domain",
+            color: "#9b30ff",
+            detail: "Unmapped departments",
+            children: unmapped
+        });
+    }
+
     const companyTree = {
         name: "Company OKR Overview",
         type: "company",
         color: "#9b30ff",
-        detail: "Unified view of all department strategies",
-        children: deptChildren
+        detail: "Unified view of all domain strategies",
+        children: domainChildren
     };
 
     const okrMap = {};
@@ -6951,6 +6986,8 @@ function _renderCompanyTreeCore(companyData) {
         d.id = i;
         if (d.data.type === 'company') {
             if (d._children) { d.children = d._children; d._children = null; }
+        } else if (d.data.type === 'domain') {
+            if (d._children) { d.children = d._children; d._children = null; }
         } else if (d.data.type === 'department') {
             if (d._children) { d.children = d._children; d._children = null; }
             else if (d.children && d.children.length) {
@@ -7008,7 +7045,7 @@ function updateCompanyTree(source) {
         return `M${px},${py}C${px},${py} ${px},${py} ${px},${py}`;
     }
 
-    const orgTypes = new Set(['company', 'department', 'subdepartment']);
+    const orgTypes = new Set(['company', 'domain', 'department', 'subdepartment']);
     function isOrgLink(d) { return orgTypes.has(d.source.data.type) && orgTypes.has(d.target.data.type); }
 
     const link = companyG.selectAll('.link').data(links, d => d.target.id);
@@ -7032,7 +7069,7 @@ function updateCompanyTree(source) {
         .on('click', (e, d) => {
             if (d.data.empty) return;
             selectedCompanyNodeId = d.id;
-            if (d.data.type === 'company' || d.data.type === 'department') {
+            if (d.data.type === 'company' || d.data.type === 'domain' || d.data.type === 'department') {
                 toggleNodeCard(d);
                 return;
             }
@@ -7084,7 +7121,7 @@ function updateCompanyTree(source) {
         .attr('dominant-baseline', 'central')
         .attr('font-size', '6px').attr('font-weight', '700').attr('letter-spacing', '0.5px')
         .attr('fill', d => {
-            const isOrg = ['company','department','subdepartment'].includes(d.data.type);
+            const isOrg = ['company','domain','department','subdepartment'].includes(d.data.type);
             if (isOrg) return (d.data.color || '#c4a0ff') + 'cc';
             if (d.data.type === 'objective') return (d.data.color || '#e879f9') + '66';
             if (d.data.type === 'kr') return '#4dd0e1' + '77';
@@ -7117,14 +7154,14 @@ function updateCompanyTree(source) {
         .attr('text-anchor', 'end').attr('x', CW / 2 - 10).attr('dominant-baseline', 'central')
         .attr('font-size', '11px');
 
-    enter.filter(d => d.data.type === 'company' || d.data.type === 'department').append('text')
+    enter.filter(d => d.data.type === 'company' || d.data.type === 'domain' || d.data.type === 'department').append('text')
         .attr('class', 'company-expand-hint')
         .attr('text-anchor', 'middle').attr('x', 0).attr('y', CH / 2 - 5)
         .attr('font-size', '7px').attr('font-weight', '600').attr('letter-spacing', '0.4px')
         .attr('fill', '#c4a0ff').attr('opacity', 0)
         .text('\u25BC view OKRs');
 
-    const expandHit = enter.filter(d => (d.data.type === 'company' || d.data.type === 'department') && ((d.children && d.children.length) || d._children));
+    const expandHit = enter.filter(d => (d.data.type === 'company' || d.data.type === 'domain' || d.data.type === 'department') && ((d.children && d.children.length) || d._children));
     expandHit.append('rect').attr('class', 'expand-indicator-hit')
         .attr('x', CW / 2 - 28).attr('y', -CH / 2).attr('width', 28).attr('height', CH)
         .attr('fill', 'transparent').style('cursor', 'pointer')
@@ -7144,7 +7181,7 @@ function updateCompanyTree(source) {
             }, 550);
         });
 
-    enter.filter(d => !d.data.empty && !['company','department','subdepartment'].includes(d.data.type)).append('text').attr('class', 'node-edit-btn')
+    enter.filter(d => !d.data.empty && !['company','domain','department','subdepartment'].includes(d.data.type)).append('text').attr('class', 'node-edit-btn')
         .attr('x', CW / 2 - 12).attr('y', -CH / 2 + 12)
         .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
         .attr('font-size', '10px').attr('fill', '#ffffffbb')
@@ -7158,13 +7195,13 @@ function updateCompanyTree(source) {
         .text(d => { const max = Math.floor((CW - 40) / 7); return d.data.name.length > max ? d.data.name.slice(0, max - 1) + '\u2026' : d.data.name; })
         .attr('fill', d => d.data.type === 'kr' ? '#8ecfd6' : '#e8e8f0')
         .attr('font-size', d => {
-            if (d.data.type === 'company') return '12px';
+            if (d.data.type === 'company' || d.data.type === 'domain') return '12px';
             if (d.data.type === 'department') return '12px';
             if (d.data.type === 'subdepartment' || d.data.type === 'initiative') return '11.5px';
             if (d.data.type === 'objective') return '11px';
             return '10.5px';
         })
-        .attr('font-weight', d => (d.data.type === 'company' || d.data.type === 'department') ? '700' : (d.data.type === 'subdepartment' || d.data.type === 'initiative') ? '600' : d.data.type === 'objective' ? '500' : '400')
+        .attr('font-weight', d => (d.data.type === 'company' || d.data.type === 'domain' || d.data.type === 'department') ? '700' : (d.data.type === 'subdepartment' || d.data.type === 'initiative') ? '600' : d.data.type === 'objective' ? '500' : '400')
         .attr('font-style', d => d.data.type === 'kr' ? 'italic' : 'normal');
     all.select('.node-bg')
         .attr('fill', d => {
@@ -7303,6 +7340,16 @@ function getNodeOkrs(d) {
         return Object.entries(COMPANY_OKRS).map(([name, info]) => ({
             name, color: info.color, detail: info.detail, typeLabel: 'COMPANY OKR'
         }));
+    }
+    if (d.data.type === 'domain') {
+        const domainDepts = (d.children || d._children || []);
+        if (domainDepts.length > 0) {
+            return domainDepts.map(c => ({
+                name: c.data.name, color: c.data.color || d.data.color || '#9b30ff',
+                detail: c.data.detail || '', typeLabel: 'DEPARTMENT'
+            }));
+        }
+        return [{ name: 'No departments assigned yet', color: '#666', detail: '', typeLabel: '', empty: true }];
     }
     if (d.data.type === 'department') {
         const deptName = d.data.name;
@@ -7529,7 +7576,7 @@ function build360Data(okrName) {
     });
 
     const okrInfo = COMPANY_OKRS[okrName] || { color: '#9b30ff', detail: '' };
-    const rootChildren = Object.entries(deptGroups).map(([dept, info]) => {
+    const deptNodes = Object.entries(deptGroups).map(([dept, info]) => {
         const subEntries = Object.entries(info.subs);
         let deptChildren;
         if (subEntries.length === 1 && subEntries[0][0] === '_root') {
@@ -7556,6 +7603,20 @@ function build360Data(okrName) {
         }
         return { name: dept, type: 'department', color: info.color, detail: `${dept} department`, children: deptChildren };
     });
+
+    const deptByName360 = {};
+    deptNodes.forEach(d => { deptByName360[d.name] = d; });
+    const domainNodes360 = Object.entries(DOMAINS).map(([domainName, domainInfo]) => {
+        const domainDepts = domainInfo.departments.map(dName => deptByName360[dName]).filter(Boolean);
+        domainInfo.departments.forEach(dName => { delete deptByName360[dName]; });
+        if (domainDepts.length === 0) return null;
+        return { name: domainName, type: 'domain', color: domainInfo.color, detail: `${domainName} domain`, children: domainDepts };
+    }).filter(Boolean);
+    const unmapped360 = Object.values(deptByName360);
+    if (unmapped360.length > 0) {
+        domainNodes360.push({ name: 'Other', type: 'domain', color: '#9b30ff', detail: 'Unmapped departments', children: unmapped360 });
+    }
+    const rootChildren = domainNodes360.length > 0 ? domainNodes360 : deptNodes;
 
     return { name: okrName, type: 'company', color: okrInfo.color, detail: okrInfo.detail, children: rootChildren };
 }
