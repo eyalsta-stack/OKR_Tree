@@ -1599,10 +1599,22 @@
             </div>
         </div>
         <div class="em-field" id="emProgressField" style="display:none">
-            <label>Progress</label>
-            <div style="display:flex;gap:0.5rem;align-items:center">
-                <input type="range" id="emProgress" min="0" max="100" value="0" style="flex:1;max-width:200px" title="How much of the initiative is finished" oninput="var v=document.getElementById('emProgressValue');if(v)v.textContent=this.value+'%'">
-                <span id="emProgressValue" style="font-size:0.85rem;font-weight:600;color:var(--text);min-width:2.5rem">0%</span>
+            <label>Work completion (simulated)</label>
+            <p style="font-size:0.7rem;color:var(--text-muted);margin:0 0 0.5rem 0;line-height:1.35">Preview of how completion will look when linked to Azure DevOps, Jira, or similar. For now this uses <strong>mock work items</strong>.</p>
+            <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;margin-bottom:0.35rem">
+                <span style="font-size:0.75rem">Done</span>
+                <input type="number" id="emMockDone" min="0" style="width:3.5rem" title="Completed work items (mock)" oninput="updateInitiativeMockPreview()">
+                <span style="font-size:0.75rem">of</span>
+                <input type="number" id="emMockTotal" min="1" style="width:3.5rem" title="Total work items (mock)" oninput="updateInitiativeMockPreview()">
+                <span style="font-size:0.8rem;font-weight:600;color:#c084ff" id="emMockPctLabel"></span>
+            </div>
+            <div id="emMockPreviewBar" style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin:0.4rem 0">
+                <div id="emMockPreviewFill" style="height:100%;width:0%;background:rgba(155,48,255,0.75);border-radius:3px;transition:width 0.15s"></div>
+            </div>
+            <p style="font-size:0.65rem;color:var(--text-muted);margin:0 0 0.4rem 0" id="emMockAutoHint"></p>
+            <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
+                <button type="button" class="btn btn-sm" onclick="regenerateInitiativeMockWork()">Randomize mock</button>
+                <button type="button" class="btn btn-sm" onclick="clearInitiativeMockWork()">Use auto (from name)</button>
             </div>
         </div>
         <div class="em-actions">
@@ -2303,6 +2315,26 @@ let lastExpandTime = 0;
 
 const TYPE_STYLES = { company: { bg: "#000000", borderW: 1.4 }, department: { bg: "#000000", borderW: 1.2 }, subdepartment: { bg: "#000000", borderW: 1 }, initiative: { bg: "#000000", borderW: 1 }, objective: { bg: "#120d22", borderW: 1 }, kr: { bg: "#151828", borderW: 0.8 } };
 const TYPE_LABELS = { company: "COMPANY", department: "DEPARTMENT", subdepartment: "SUB-DEPARTMENT", initiative: "INITIATIVE", objective: "OBJECTIVE", kr: "KEY RESULT" };
+
+function hashInitiativeSim(str) {
+    let h = 0;
+    const s = (str || '').toString();
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
+    return Math.abs(h);
+}
+/** Mock work-item completion until Azure DevOps / Jira etc. sync. Persisted via mockWorkTotal + mockWorkDone, else derived from initiative name. */
+function getInitiativeWorkSimulation(data) {
+    const total = parseInt(data.mockWorkTotal, 10);
+    const doneRaw = parseInt(data.mockWorkDone, 10);
+    if (Number.isFinite(total) && total >= 1) {
+        const done = Number.isFinite(doneRaw) && doneRaw >= 0 ? Math.min(doneRaw, total) : 0;
+        return { pct: Math.round((done / total) * 100), done, total, persisted: true };
+    }
+    const h = hashInitiativeSim(data.name || '');
+    const t = 6 + (h % 13);
+    const d = h % (t + 1);
+    return { pct: Math.round((d / t) * 100), done: d, total: t, persisted: false };
+}
 
 const DEPT_COLORS = {
     "FEF": "#9b30ff", "FEF - Communications": "#22d3ee", "FEF - Baseline / Aurora": "#8b5cf6", "FEF - Reports": "#c084fc",
@@ -5478,7 +5510,7 @@ function update(source) {
         .attr('x', progressBarX).attr('y', progressBarY).attr('height', 4)
         .attr('rx', 2).attr('ry', 2)
         .attr('fill', 'rgba(155,48,255,0.7)')
-        .attr('width', d => Math.max(0, Math.min(100, parseInt(d.data.progress, 10) || 0)) / 100 * progressBarW);
+        .attr('width', d => getInitiativeWorkSimulation(d.data).pct / 100 * progressBarW);
 
     clipped.filter(d => d._children || d.children).append('text').attr('class', 'expand-indicator')
         .attr('text-anchor', 'end').attr('x', NODE_W / 2 - 10).attr('dominant-baseline', 'central')
@@ -5532,6 +5564,7 @@ function update(source) {
         .on('contextmenu', (event, d) => openEditModal(event, d));
     nodeUpdate.transition().duration(500).attr('transform', d => isHorizontal ? `translate(${d.y},${d.x})` : `translate(${d.x},${d.y})`);
     nodeUpdate.select('.expand-indicator').text(d => d._children ? '+' : (d.children ? '\u2212' : ''));
+    nodeUpdate.select('.node-progress-fill').attr('width', d => d.data.type === 'initiative' ? getInitiativeWorkSimulation(d.data).pct / 100 * progressBarW : 0);
 
     node.exit().transition().duration(300)
         .attr('transform', isHorizontal ? `translate(${source.y},${source.x})` : `translate(${source.x},${source.y})`)
@@ -5607,9 +5640,17 @@ function showTooltip(event, d) {
     }
     if (d.data.timeline) html += `<div class="tooltip-meta">Timeline: ${d.data.timeline}</div>`;
     if (d.data.link) html += `<div class="tooltip-meta" style="margin-top:0.3rem"><a href="${escapeHtml(d.data.link)}" target="_blank" style="color:#38bdf8;text-decoration:none;font-size:0.7rem">&#8599; Azure DevOps</a></div>`;
-    if (d.data.type === 'initiative' && (d.data.progress != null && d.data.progress !== '')) {
-        const pct = Math.min(100, Math.max(0, parseInt(d.data.progress, 10) || 0));
-        html += `<div class="tooltip-meta">Progress: <strong>${pct}%</strong></div>`;
+    if (d.data.type === 'initiative') {
+        const sim = getInitiativeWorkSimulation(d.data);
+        const src = sim.persisted ? 'Custom mock' : 'Auto mock (from name)';
+        html += `<div style="margin-top:0.45rem;padding:8px 10px;background:rgba(155,48,255,0.07);border:1px solid rgba(155,48,255,0.28);border-radius:8px">
+            <div style="font-size:0.62rem;color:#c084ff;font-weight:700;letter-spacing:0.35px;margin-bottom:5px">WORK ITEMS (SIMULATED)</div>
+            <div style="height:7px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-bottom:6px">
+                <div style="width:${sim.pct}%;height:100%;background:rgba(155,48,255,0.72);border-radius:4px"></div>
+            </div>
+            <div style="font-size:0.78rem;color:#e2e8f0"><strong>${sim.done}</strong> / <strong>${sim.total}</strong> items · <strong>${sim.pct}%</strong></div>
+            <div style="font-size:0.62rem;color:var(--text-muted);margin-top:4px;line-height:1.3">${src}. Live sync when connected to a work tool.</div>
+        </div>`;
     }
     if ((d.data.sharedWith && d.data.sharedWith.length > 0) || (d.data.similarSharedWith && d.data.similarSharedWith.length > 0) || (d.data.sharedDepts && d.data.sharedDepts.length > 0)) {
         html += `<div style="margin-top:0.5rem;border:1px solid #22d3ee33;border-radius:8px;overflow:hidden;background:rgba(34,211,238,0.04)">`;
@@ -5882,6 +5923,42 @@ window.closeSharedDeptsPanel = closeSharedDeptsPanel;
 let editingNode = null;
 let editingIsCompany = false;
 
+window.updateInitiativeMockPreview = function() {
+    if (!editingNode || editingNode.data.type !== 'initiative') return;
+    const tot = parseInt(document.getElementById('emMockTotal').value, 10);
+    const don = parseInt(document.getElementById('emMockDone').value, 10);
+    const name = editingNode.data.name || '';
+    let sim;
+    if (Number.isFinite(tot) && tot >= 1) {
+        const d0 = Number.isFinite(don) && don >= 0 ? Math.min(don, tot) : 0;
+        sim = { pct: Math.round((d0 / tot) * 100), done: d0, total: tot };
+    } else {
+        sim = getInitiativeWorkSimulation({ name });
+    }
+    const pctEl = document.getElementById('emMockPctLabel');
+    const fillEl = document.getElementById('emMockPreviewFill');
+    const hintEl = document.getElementById('emMockAutoHint');
+    if (pctEl) pctEl.textContent = sim.pct + '%';
+    if (fillEl) fillEl.style.width = sim.pct + '%';
+    if (hintEl) {
+        hintEl.textContent = (Number.isFinite(tot) && tot >= 1)
+            ? 'These counts will be saved as your mock until a work tool is connected.'
+            : 'Using auto mock from name: ' + sim.done + '/' + sim.total + '. Enter done + total above to pin a custom mock.';
+    }
+};
+window.regenerateInitiativeMockWork = function() {
+    const t = 8 + Math.floor(Math.random() * 11);
+    const d0 = Math.floor(Math.random() * (t + 1));
+    document.getElementById('emMockTotal').value = t;
+    document.getElementById('emMockDone').value = d0;
+    updateInitiativeMockPreview();
+};
+window.clearInitiativeMockWork = function() {
+    document.getElementById('emMockTotal').value = '';
+    document.getElementById('emMockDone').value = '';
+    updateInitiativeMockPreview();
+};
+
 function openEditModal(event, d, isCompany) {
     event.preventDefault();
     event.stopPropagation();
@@ -5910,11 +5987,10 @@ function openEditModal(event, d, isCompany) {
     const isInitiative = !isOrgNode && data.type === 'initiative';
     document.getElementById('emProgressField').style.display = isInitiative ? '' : 'none';
     if (isInitiative) {
-        const pct = Math.min(100, Math.max(0, parseInt(data.progress, 10) || 0));
-        const progressInput = document.getElementById('emProgress');
-        const progressValue = document.getElementById('emProgressValue');
-        progressInput.value = pct;
-        if (progressValue) progressValue.textContent = pct + '%';
+        const mt = parseInt(data.mockWorkTotal, 10);
+        document.getElementById('emMockTotal').value = (Number.isFinite(mt) && mt >= 1) ? mt : '';
+        document.getElementById('emMockDone').value = (Number.isFinite(mt) && mt >= 1) ? (parseInt(data.mockWorkDone, 10) || 0) : '';
+        updateInitiativeMockPreview();
     }
 
     const coSelect = document.getElementById('emCompanyOkr');
@@ -5973,9 +6049,15 @@ window.saveEditModal = function() {
     data.timeline = document.getElementById('emTimeline').value.trim() || undefined;
     data.link = document.getElementById('emLink').value.trim() || undefined;
     if (data.type === 'initiative') {
-        const p = document.getElementById('emProgress');
-        const v = p ? parseInt(p.value, 10) : 0;
-        data.progress = (v >= 0 && v <= 100) ? v : undefined;
+        const tot = parseInt(document.getElementById('emMockTotal').value, 10);
+        const don = parseInt(document.getElementById('emMockDone').value, 10);
+        if (Number.isFinite(tot) && tot >= 1) {
+            data.mockWorkTotal = tot;
+            data.mockWorkDone = Math.min(Math.max(0, Number.isFinite(don) ? don : 0), tot);
+        } else {
+            delete data.mockWorkTotal;
+            delete data.mockWorkDone;
+        }
     }
     const wasCompany = editingIsCompany;
     closeEditModal();
@@ -6758,7 +6840,7 @@ function updateCompanyTree(source) {
     coClipped.filter(d => d.data.type === 'initiative').append('rect').attr('class', 'node-progress-fill')
         .attr('x', coProgressX).attr('y', coProgressY).attr('height', 4).attr('rx', 2).attr('ry', 2)
         .attr('fill', 'rgba(155,48,255,0.7)')
-        .attr('width', d => Math.max(0, Math.min(100, parseInt(d.data.progress, 10) || 0)) / 100 * coProgressW);
+        .attr('width', d => getInitiativeWorkSimulation(d.data).pct / 100 * coProgressW);
     coClipped.append('text').attr('class', 'expand-indicator')
         .attr('text-anchor', 'end').attr('x', CW / 2 - 10).attr('dominant-baseline', 'central')
         .attr('font-size', '11px');
@@ -6836,6 +6918,7 @@ function updateCompanyTree(source) {
         .attr('stroke-dasharray', d => d.data.type === 'kr' ? '6,4' : 'none');
     all.select('.expand-indicator')
         .text(d => d.data.empty ? '' : (d.children && d.children.length) ? '\u2212' : (d._children ? '+' : ''));
+    all.select('.node-progress-fill').attr('width', d => d.data.type === 'initiative' ? getInitiativeWorkSimulation(d.data).pct / 100 * coProgressW : 0);
 
     node.exit().transition().duration(dur)
         .attr('transform', `translate(${companyHorizontal ? source.y : source.x},${companyHorizontal ? source.x : source.y})`)
