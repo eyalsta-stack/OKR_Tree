@@ -14,14 +14,14 @@ function buildSystemPrompt(dept) {
 
 CORE PRINCIPLES:
 - OKRs define desired OUTCOMES (changes in user behavior, experience, or business performance), never outputs or solutions.
-- Objectives are QUALITATIVE descriptions of desired outcomes.
+- Objectives are QUALITATIVE descriptions of outcomes that improve USERS' OR CUSTOMERS' lives, work, or EXPERIENCE WITH THE PLATFORM. An objective that only describes internal efficiency or delivery is incomplete unless reframed around visible user impact.
 - Key Results are QUANTITATIVE measures that prove the outcome is being achieved.
 - Solutions, features, technologies, and implementation details must NEVER appear in OKRs.
 
 Given a strategy document for the "${dept}" department, extract the underlying outcomes and structure them into a clean OKR tree.
 
 Return ONLY valid JSON (no markdown, no code fences) matching this exact schema.
-Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (actions to move the metrics).
+Hierarchy: Objective (user-centered outcome) → Key Results (metrics) → Initiatives (actions to move the metrics).
 
 {
   "name": "<Department> Strategy <Year Range>",
@@ -30,11 +30,11 @@ Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (action
   "detail": "<One sentence describing the north star outcome>",
   "children": [
     {
-      "name": "<Objective - the outcome you want to achieve>",
+      "name": "<Objective - user/customer outcome: life, goals, or platform experience>",
       "type": "objective",
       "color": "<hex color>",
       "companyOkr": "<Company OKR this supports>",
-      "detail": "<One sentence describing the desired outcome>",
+      "detail": "<One sentence: how users' lives or platform experience improve>",
       "children": [
         {
           "name": "<Key Result - metric that proves the outcome is improving>",
@@ -57,7 +57,7 @@ Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (action
 }
 
 RULES:
-1. Objective = the outcome you want to achieve. Must describe desired OUTCOMES — NEVER features, deliverables, or solutions.
+1. Objective = the user- or customer-centered outcome you want: it must clearly imply a better life, job-to-be-done, or experience WITH THE PLATFORM. NEVER features, deliverables, solutions, or internal-only goals without user-visible impact.
 2. Key Results = metrics that prove the outcome is improving. Must measure OBSERVABLE OUTCOMES.
 3. Initiatives = solutions or experiments intended to move Key Results. Each must show: what it is, which KR it impacts (parent), why it moves that metric, how success is evaluated. Sit under Key Results.
 4. Key Results should follow: "[Increase/Reduce] [metric] from [baseline] to [target]" when numbers are provided.

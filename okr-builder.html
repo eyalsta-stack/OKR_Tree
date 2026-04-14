@@ -1196,7 +1196,7 @@
 <div id="input-view" class="view">
     <div class="input-card">
         <h2>OKR Tree</h2>
-        <p class="subtitle">Select a department to load or generate an OKR tree (Objective → Key Results → Initiatives).</p>
+        <p class="subtitle">Select a department to load or generate an OKR tree. Objectives describe user- and customer-centered outcomes (life and platform experience); then Key Results and Initiatives.</p>
 
         <div class="row">
             <div class="form-group">
@@ -1652,7 +1652,7 @@
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Core Principle</h4>
         <div class="guide-content">
             <p><strong>OKRs define what outcome we want.</strong> Key Results define how we know we achieved it. Discovery experiments define what we try to get there.</p>
-            <p>OKRs are <strong>outcome-oriented</strong> — they measure the impact on users or the business, never the features or solutions delivered.</p>
+            <p>OKRs are <strong>outcome-oriented</strong> — they measure the impact on users or the business, never the features or solutions delivered. An <strong>Objective</strong> in particular must be written as an outcome that improves <strong>people's lives, work, or experience with the platform</strong> — not as an internal deliverable in disguise.</p>
         </div>
     </div>
 
@@ -1661,7 +1661,7 @@
         <div class="guide-content">
             <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
                 <tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:0.4rem 0.5rem">Level</th><th style="text-align:left;padding:0.4rem 0.5rem">Purpose</th></tr>
-                <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Objective</td><td style="padding:0.4rem 0.5rem">The outcome you want to achieve</td></tr>
+                <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Objective</td><td style="padding:0.4rem 0.5rem">The user- or customer-centered outcome you want — a meaningful change in their life, work, or experience with the platform</td></tr>
                 <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.4rem 0.5rem;font-weight:600">Key Results</td><td style="padding:0.4rem 0.5rem">Metrics that prove the outcome is improving</td></tr>
                 <tr><td style="padding:0.4rem 0.5rem;font-weight:600">Initiatives</td><td style="padding:0.4rem 0.5rem">Solutions or experiments intended to move Key Results</td></tr>
             </table>
@@ -1671,15 +1671,16 @@
     <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Objectives</h4>
         <div class="guide-content">
-            <p>An Objective is the <strong>outcome you want to achieve</strong> — a qualitative description of desired change in customer behavior, experience, or business performance.</p>
-            <p>Structure: <code>Improve / Increase / Reduce / Strengthen [customer behavior or business outcome]</code></p>
+            <p>An Objective is always an <strong>outcome</strong>, not a project. It must describe something we want to be true for <strong>users or customers</strong> — a change that tangibly affects <strong>their life, their goals, or their day-to-day experience with the platform</strong>. If you cannot name how the user's world gets better, it is not yet a proper Objective.</p>
+            <p><strong>How to write it:</strong> Name the human impact first (confidence, time saved, clarity, trust, ability to finish something important). Use qualitative language; save numbers for Key Results.</p>
+            <p>Patterns that work well: <code>Improve / Increase / Reduce / Strengthen [what users can do, feel, or experience on the platform]</code></p>
             <div class="guide-example">
                 <div class="guide-ex-col">
                     <div class="ex-label good">Good Objectives</div>
                     <ul>
-                        <li>Improve customers' ability to resolve issues independently</li>
-                        <li>Increase successful task completion</li>
-                        <li>Reduce friction in core workflows</li>
+                        <li>Customers spend less time stuck and feel confident resolving issues in the product</li>
+                        <li>Users complete money-critical tasks without doubt or rework</li>
+                        <li>Day-to-day use of the platform feels simpler and more trustworthy</li>
                     </ul>
                 </div>
                 <div class="guide-ex-col">
@@ -1725,7 +1726,7 @@
             <div class="guide-rule">Example: AI Support Assistant for Self-Service Resolution</div>
 
             <p style="margin:1.2rem 0 0.5rem"><strong>2. Objective Alignment</strong> — Which Objective this initiative supports.</p>
-            <table class="guide-table" style="margin:0.3rem 0"><tr><td style="padding:0.3rem 0.6rem;font-weight:600">Objective</td><td style="padding:0.3rem 0.6rem">Improve customers' ability to resolve issues independently</td></tr></table>
+            <table class="guide-table" style="margin:0.3rem 0"><tr><td style="padding:0.3rem 0.6rem;font-weight:600">Objective</td><td style="padding:0.3rem 0.6rem">Customers resolve issues with less effort and clearer guidance in the product</td></tr></table>
 
             <p style="margin:1.2rem 0 0.5rem"><strong>3. Target Key Results</strong> — The Key Results this initiative is expected to impact. An initiative may impact multiple KRs.</p>
             <table class="guide-table" style="margin:0.3rem 0;font-size:0.75rem">
@@ -1797,7 +1798,7 @@ Timeline</div>
             <p style="margin:1.2rem 0 0.5rem"><strong>Example Initiative</strong></p>
             <div class="guide-rule" style="font-size:0.8rem;line-height:1.55">
                 <strong>Initiative:</strong> AI Support Assistant<br>
-                <strong>Objective:</strong> Improve customers' ability to resolve issues independently.<br><br>
+                <strong>Objective:</strong> Customers resolve issues with less effort and clearer guidance in the product.<br><br>
                 <strong>Target Key Results</strong><br>
                 • Increase self-service resolution from 35% → 55%<br>
                 • Reduce support ticket volume from 12k → 8k<br><br>
@@ -1814,7 +1815,7 @@ Timeline</div>
     <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Creation Rules</h4>
         <div class="guide-content">
-            <div class="guide-rule"><strong>Rule 1:</strong> Objectives must describe desired outcomes, not solutions.</div>
+            <div class="guide-rule"><strong>Rule 1:</strong> Objectives must describe desired <strong>user- or customer-centered outcomes</strong> — a change that impacts their life or their experience with the platform — never solutions, features, or internal outputs framed as goals.</div>
             <div class="guide-rule"><strong>Rule 2:</strong> Key Results must measure behavior change or business impact.</div>
             <div class="guide-rule"><strong>Rule 3:</strong> Each Objective should have 2-5 Key Results.</div>
             <div class="guide-rule"><strong>Rule 4:</strong> Key Results must contain measurable metrics.</div>
@@ -1829,7 +1830,7 @@ Timeline</div>
             <div class="guide-example">
                 <div class="guide-ex-col">
                     <div class="ex-label good">Outcome (correct)</div>
-                    <ul><li>Increase successful support resolution</li><li>Reduce time to first value</li></ul>
+                    <ul><li>Users resolve support issues successfully without repeated contacts</li><li>New customers reach first value in the product with less confusion and delay</li></ul>
                 </div>
                 <div class="guide-ex-col">
                     <div class="ex-label bad">Output (wrong for OKRs)</div>
@@ -1845,7 +1846,7 @@ Timeline</div>
             <p>The hierarchy:</p>
             <p style="font-family:monospace;font-size:0.75rem;color:var(--text);line-height:1.8">
                 Company / Department / Sub-Department<br>
-                &nbsp;&nbsp;&#8627; Objective (outcome you want)<br>
+                &nbsp;&nbsp;&#8627; Objective (user- or customer-centered outcome for life / platform experience)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;&#8627; Key Results (metrics that prove it)<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8627; Initiatives (solutions/experiments to move the metrics)
             </p>
@@ -1856,7 +1857,7 @@ Timeline</div>
     <div class="guide-section collapsed">
         <h4 onclick="this.parentElement.classList.toggle('collapsed')"><span class="gs-arrow">&#9660;</span> Example OKR</h4>
         <div class="guide-content">
-            <p><strong>Objective:</strong> Improve users' ability to complete tasks successfully within the product.</p>
+            <p><strong>Objective:</strong> Users complete important tasks in the product with less friction and more confidence in their outcomes.</p>
             <div class="guide-rule">KR1: Increase task completion rate from 52% to 70%</div>
             <div class="guide-rule">KR2: Reduce average task completion time from 6min to 4min</div>
             <div class="guide-rule">KR3: Increase user satisfaction score from 3.8 to 4.4</div>
@@ -2408,7 +2409,7 @@ const DEPT_OKRS = {
 
 // ─── PRE-STORED OKR TREE DATA ───
 // Source of truth: memory.md — update here when data changes
-// Framework: Continuous Discovery Habits (Teresa Torres) — outcome-oriented, no solutions/features
+// Framework: Continuous Discovery Habits (Teresa Torres) — objectives = user life + platform experience outcomes; no solutions/features in OKRs
 // Company-level OKRs that department objectives map to
 const COMPANY_OKRS = {
     "Grow Up\u2011Market": { color: "#22d3ee", light: "#a5f3fc", detail: "Build Payoneer for multi-entity SMB/Es with more complex financial and operational needs; focus on True ICPs" },
@@ -3818,14 +3819,14 @@ async function callAIForTree(dept, text) {
 
 CORE PRINCIPLES:
 - OKRs define desired OUTCOMES (changes in user behavior, experience, or business performance), never outputs or solutions.
-- Objectives are QUALITATIVE descriptions of desired outcomes.
+- Objectives are QUALITATIVE descriptions of outcomes that improve USERS' OR CUSTOMERS' lives, work, or EXPERIENCE WITH THE PLATFORM. An objective that only describes internal efficiency or delivery is incomplete unless reframed around visible user impact.
 - Key Results are QUANTITATIVE measures that prove the outcome is being achieved.
 - Solutions, features, technologies, and implementation details must NEVER appear in OKRs.
 
 Given a strategy document for the "${dept}" department, extract the underlying outcomes and structure them into a clean OKR tree.
 
 Return ONLY valid JSON (no markdown, no code fences) matching this exact schema.
-Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (actions to move the metrics).
+Hierarchy: Objective (user-centered outcome) → Key Results (metrics) → Initiatives (actions to move the metrics).
 
 {
   "name": "<Department> Strategy <Year Range>",
@@ -3834,11 +3835,11 @@ Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (action
   "detail": "<One sentence describing the north star outcome>",
   "children": [
     {
-      "name": "<Objective - the outcome you want to achieve>",
+      "name": "<Objective - user/customer outcome: life, goals, or platform experience>",
       "type": "objective",
       "color": "<hex color>",
       "companyOkr": "<Company OKR this supports>",
-      "detail": "<One sentence describing the desired outcome>",
+      "detail": "<One sentence: how users' lives or platform experience improve>",
       "children": [
         {
           "name": "<Key Result - metric that proves the outcome is improving>",
@@ -3861,7 +3862,7 @@ Hierarchy: Objective (outcome) → Key Results (metrics) → Initiatives (action
 }
 
 RULES:
-1. Objective = the outcome you want to achieve. Must describe desired OUTCOMES — NEVER features, deliverables, or solutions.
+1. Objective = the user- or customer-centered outcome you want: it must clearly imply a better life, job-to-be-done, or experience WITH THE PLATFORM. NEVER features, deliverables, solutions, or internal-only goals without user-visible impact.
 2. Key Results = metrics that prove the outcome is improving. Must measure OBSERVABLE OUTCOMES.
 3. Initiatives = solutions or experiments intended to move Key Results. Each must show: what it is, which KR it impacts (parent), why it moves that metric, how success is evaluated. Sit under Key Results.
 4. Key Results should follow: "[Increase/Reduce] [metric] from [baseline] to [target]" when numbers are provided.
@@ -4703,7 +4704,7 @@ function reviewOKRs() {
 
     nodes.forEach(n => {
         if ((n.type === 'objective' || n.type === 'initiative') && solutionKeywords.test(n.name)) {
-            issues.push({ node: n.name, type: n.type, issue: 'May describe a <strong>solution/output</strong> rather than an outcome. Objectives should describe desired behavior changes, not deliverables.' });
+            issues.push({ node: n.name, type: n.type, issue: 'May describe a <strong>solution/output</strong> rather than an outcome. Objectives should describe how users' lives or <strong>experience with the platform</strong> improves, not deliverables.' });
         }
         if (n.type === 'kr' && !metricPattern.test(n.name) && !metricPattern.test(n.detail || '')) {
             issues.push({ node: n.name, type: 'kr', issue: 'Missing <strong>measurable metric</strong>. Key Results should include a quantitative target (e.g., "from X to Y").' });
@@ -4718,7 +4719,7 @@ function reviewOKRs() {
     });
 
     if (issues.length === 0) {
-        addBotMessage('<p>Your OKR tree looks solid! All objectives are outcome-focused, KRs have metrics, and company OKR mappings are in place. Keep it up.</p>');
+        addBotMessage('<p>Your OKR tree looks solid! Objectives read as user- and platform-experience outcomes, KRs have metrics, and company OKR mappings are in place. Keep it up.</p>');
     } else {
         let html = `<p>Found <strong>${issues.length} suggestion(s)</strong> to improve your tree:</p><ul>`;
         issues.slice(0, 8).forEach(i => {
@@ -4830,10 +4831,10 @@ window.handleChipAction = function(action) {
                     <p><strong>Example:</strong></p>
                     <ul>
                     <li>Output: "Launch an AI chatbot"</li>
-                    <li>Outcome: "Customers resolve issues independently without contacting support"</li>
+                    <li>Outcome: "Customers resolve issues independently — less stress, faster resolution, and a support experience that respects their time"</li>
                     </ul>
-                    <p>OKRs must always describe <strong>outcomes</strong>. Solutions belong in experiments, not objectives.</p>
-                    <p>A good test: <em>"Could this be achieved in more than one way?"</em> If yes, it's an outcome. If it specifies the how, it's an output.</p>`
+                    <p>OKRs must always describe <strong>outcomes</strong>, and strong objectives spell out <strong>how the user's world gets better</strong> — including their experience on the platform. Solutions belong in experiments, not objectives.</p>
+                    <p>Good tests: <em>"Could this be achieved in more than one way?"</em> (outcome vs output) and <em>"Would a user feel the difference?"</em> (user- and platform-centered objective).</p>`
                 );
                 renderChatChips();
                 break;
@@ -4841,7 +4842,7 @@ window.handleChipAction = function(action) {
                 addBotMessage(
                     `<p><strong>OKR Best Practices</strong> (Continuous Discovery Habits):</p>
                     <ul>
-                    <li><strong>Objectives</strong> = qualitative desired outcomes, not solutions</li>
+                    <li><strong>Objectives</strong> = qualitative outcomes that improve users' lives or experience with the platform — not solutions or internal-only goals</li>
                     <li><strong>Key Results</strong> = quantitative proof the outcome happened (2-5 per objective)</li>
                     <li>Use the format: <code>Increase [metric] from [X] to [Y]</code></li>
                     <li>Map every objective to a <strong>company OKR</strong></li>
@@ -4899,7 +4900,7 @@ window.rewriteObjective = async function(idx) {
     if (hasLLM()) {
         try {
             const content = await callLLM([
-                { role: 'system', content: `You are an expert OKR coach following the Continuous Discovery Habits framework (Teresa Torres). Rewrite the given objective to be strictly outcome-focused. It must describe a desired change in customer behavior, experience, or business performance — never a solution, feature, or deliverable. Keep it concise (under 50 chars if possible). Also suggest 3 strong Key Results that could measure this outcome. Respond in this JSON format: {"rewritten":"...","reasoning":"one sentence why","keyResults":["KR1","KR2","KR3"]}` },
+                { role: 'system', content: `You are an expert OKR coach following the Continuous Discovery Habits framework (Teresa Torres). Rewrite the given objective so it is strictly a user- or customer-centered OUTCOME: it must describe a meaningful improvement in their life, work, or experience with the platform — never a solution, feature, or deliverable. Keep it concise (under 50 chars if possible). Also suggest 3 strong Key Results that could measure this outcome. Respond in this JSON format: {"rewritten":"...","reasoning":"one sentence why","keyResults":["KR1","KR2","KR3"]}` },
                 { role: 'user', content: `Current objective: "${target.name}"\nContext: ${target.detail || 'none'}\nCompany OKR: ${target.companyOkr || 'none'}` }
             ], { temperature: 0.4, max_tokens: 500 });
             hideTyping();
@@ -5334,7 +5335,7 @@ window.sendChatMessage = async function() {
 
 RULES:
 - OKRs define desired OUTCOMES, never outputs or solutions
-- Objectives = qualitative desired changes in customer behavior/experience/business
+- Objectives = qualitative outcomes that improve users' lives or their experience with the platform (not internal projects dressed as goals)
 - Key Results = quantitative proof the outcome occurred (2-5 per objective)
 - Solutions belong in experiments, never in OKRs
 - Always be concise and actionable
@@ -5431,7 +5432,7 @@ function demoRespond(text, lower) {
         const withTimeline = krs.filter(n => n.timeline);
         if (withTimeline.length > 0) html += `<li><strong>${withTimeline.length}</strong> KRs have timelines set</li>`;
         const outcomeObj = objectives.filter(n => !/\b(build|launch|deploy|implement|create|ship)\b/i.test(n.name));
-        if (outcomeObj.length > 0) html += `<li><strong>${outcomeObj.length}/${objectives.length}</strong> objectives are outcome-focused</li>`;
+        if (outcomeObj.length > 0) html += `<li><strong>${outcomeObj.length}/${objectives.length}</strong> objectives look outcome-focused (check that each centers on users' lives or platform experience)</li>`;
         const mapped = new Set(); nodes.forEach(n => { if (n.companyOkr) mapped.add(n.companyOkr); });
         if (mapped.size > 0) html += `<li>Mapped to <strong>${mapped.size}</strong> company OKR${mapped.size > 1 ? 's' : ''}</li>`;
         html += '</ul><p>Keep iterating — every review makes the tree sharper!</p>';
@@ -5486,16 +5487,16 @@ function demoRespond(text, lower) {
 
     if (/teresa|continuous discovery|habit|framework|cdh/i.test(lower)) {
         return `<p><strong>Continuous Discovery Habits</strong> (Teresa Torres) is the framework OKRA follows:</p>
-            <ul><li><strong>Outcome-first</strong>: Define the behavior change you want, not the feature you'll build</li>
+            <ul><li><strong>Outcome-first</strong>: Define the change you want for users — their life, goals, and experience on the platform — not the feature you'll build</li>
             <li><strong>Opportunity Solution Tree</strong>: Map opportunities (customer needs) to outcomes, then explore multiple solutions</li>
             <li><strong>Weekly touchpoints</strong>: Interview customers every week to validate assumptions</li>
             <li><strong>Assumption mapping</strong>: Identify the riskiest assumptions and test them first</li></ul>
-            <p>In PayOKR, this translates to: <strong>Objectives = desired outcomes</strong>, <strong>Key Results = evidence of the outcome</strong>, and solutions live in experiments, not OKRs.</p>`;
+            <p>In PayOKR, this translates to: <strong>Objectives = user-centered outcomes</strong> (life + platform experience), <strong>Key Results = evidence of the outcome</strong>, and solutions live in experiments, not OKRs.</p>`;
     }
 
     if (/hi|hello|hey|what's up|sup|yo|good morning|good afternoon/i.test(lower) && lower.length < 30) {
         const greetings = [
-            `<p>Hey there! I'm OKRA, your OKR buddy. I'm here to help you build outcome-focused OKR trees.</p><p>${currentData ? 'I can see you have <strong>' + escapeHtml(dept) + '</strong> loaded. Want me to review it?' : 'Load a tree from <strong>Tree Manager</strong> and I can help you sharpen it!'}</p>`,
+            `<p>Hey there! I'm OKRA, your OKR buddy. I'm here to help you build OKR trees where objectives center on <strong>users' lives and experience with the platform</strong>.</p><p>${currentData ? 'I can see you have <strong>' + escapeHtml(dept) + '</strong> loaded. Want me to review it?' : 'Load a tree from <strong>Tree Manager</strong> and I can help you sharpen it!'}</p>`,
             `<p>Hi! Ready to make some great OKRs? ${currentData ? 'I see your <strong>' + escapeHtml(dept) + '</strong> tree — want a quick health check?' : 'Open a tree and let\'s get started!'}</p>`,
             `<p>Hello! OKRA at your service. Ask me anything about OKRs, or use the quick actions below to get started!</p>`
         ];
@@ -5513,12 +5514,12 @@ function demoRespond(text, lower) {
 
     if (/example|sample|show me.*okr|what.*good.*okr/i.test(lower)) {
         return `<p><strong>Example of a well-formed OKR:</strong></p>
-            <p><strong>Objective:</strong> <code>Customers resolve issues independently without contacting support</code></p>
+            <p><strong>Objective:</strong> <code>Customers resolve issues faster with less frustration — a calmer, clearer support experience on the platform</code></p>
             <p><strong>Key Results:</strong></p>
             <ul><li>Increase self-service resolution rate from 35% to 60%</li>
             <li>Reduce average support tickets per active user from 1.2 to 0.7</li>
             <li>Improve help center satisfaction score from 3.2 to 4.5</li></ul>
-            <p>Notice: the objective is an <strong>outcome</strong> (behavior change), not a feature. The KRs are <strong>measurable</strong> with from/to targets.</p>`;
+            <p>Notice: the objective centers on <strong>users' experience and outcomes</strong>, not a feature. The KRs are <strong>measurable</strong> with from/to targets.</p>`;
     }
 
     return `<p>Great question! Let me help you with that. Here's what I can do:</p>
